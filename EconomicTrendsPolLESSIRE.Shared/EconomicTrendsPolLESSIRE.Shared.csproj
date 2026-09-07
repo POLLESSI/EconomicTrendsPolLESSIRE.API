@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Extensions\" />
+    <Folder Include="Interfaces\" />
+    <Folder Include="Json\" />
+    <Folder Include="Utils\" />
+    <Folder Include="Time\" />
+    <Folder Include="Security\" />
+    <Folder Include="Resilience\" />
+    <Folder Include="Options\" />
+    <Folder Include="Observability\" />
+    <Folder Include="Notifications\" />
+    <Folder Include="StaticConfig\Constants\" />
+  </ItemGroup>
+
+</Project>

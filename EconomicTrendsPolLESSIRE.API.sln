@@ -1,0 +1,87 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.37614.0 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EconomicTrendsPolLESSIRE.API", "EconomicTrendPolLESSIRE.API\EconomicTrendsPolLESSIRE.API.csproj", "{CE26A4DC-B11A-4287-ABEA-32631139C0C4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EconomicTrendsPolLESSIRE.Application", "EconomicTrendsPolLESSIRE.Application\EconomicTrendsPolLESSIRE.Application.csproj", "{ACA314BE-70E3-45DD-AF27-38AD21745064}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EconomicTrendsPolLESSIRE.Domain", "EcoomicTrendsPolLESSIRE.Domain\EconomicTrendsPolLESSIRE.Domain.csproj", "{6169F822-C642-40C1-8BD6-91A5C402B337}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EconomicTrendsPolLESSIRE.DTOs", "EcnomicTrendsPolLESSIRE.DTOs\EconomicTrendsPolLESSIRE.DTOs.csproj", "{EBCE87CA-F62A-4A6F-A6D0-FBF17C9288F8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EconomicTrendsPolLESSIRE.GetHubs", "EconomicTrendsPolLESSIRE.GetHubs\EconomicTrendsPolLESSIRE.GetHubs.csproj", "{051FF8E5-850A-4BFE-9496-0AEA5765B708}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EconomicTrendsPolLESSIRE.Infrastructure", "EconomicTrendsPolLESSIRE.Infrastructure\EconomicTrendsPolLESSIRE.Infrastructure.csproj", "{5AED942D-63D1-4737-9B21-4DB12A806689}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EconomicTrendsPolLESSIRE.Shared", "EconomicTrendsPolLESSIRE.Shared\EconomicTrendsPolLESSIRE.Shared.csproj", "{A7C9736F-057A-45DD-9F81-544AC46F1470}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EconomicTrendsPolLESSIRE.Worker", "EconomicTrendsPolLESSIRE.Worker\EconomicTrendsPolLESSIRE.Worker.csproj", "{7D234CF7-ABA8-47C6-B6D9-DCF8532F0CA3}"
+EndProject
+Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "EconomicTrendsPolLESSIREDb", "EconomicTrendsPolLESSIREDb\EconomicTrendsPolLESSIREDb.sqlproj", "{4196264D-2D17-436B-92F1-80D62A5F562F}"
+EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "EconomicTrendsPolLESSIRE.AI", "EconomicTrendsPolLESSIRE.AI\EconomicTrendsPolLESSIRE.AI.pyproj", "{DF3BEA3C-1FB3-4B8F-BC39-EFA71274834F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EconomicTrendsPolLESSIRE.Contracts", "EconomicTrendsPolLESSIRE.Contracts\EconomicTrendsPolLESSIRE.Contracts.csproj", "{5F1B01A7-A519-4D55-8F71-9B6B989AF7E5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CE26A4DC-B11A-4287-ABEA-32631139C0C4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CE26A4DC-B11A-4287-ABEA-32631139C0C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CE26A4DC-B11A-4287-ABEA-32631139C0C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CE26A4DC-B11A-4287-ABEA-32631139C0C4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ACA314BE-70E3-45DD-AF27-38AD21745064}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ACA314BE-70E3-45DD-AF27-38AD21745064}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ACA314BE-70E3-45DD-AF27-38AD21745064}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ACA314BE-70E3-45DD-AF27-38AD21745064}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6169F822-C642-40C1-8BD6-91A5C402B337}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6169F822-C642-40C1-8BD6-91A5C402B337}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6169F822-C642-40C1-8BD6-91A5C402B337}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6169F822-C642-40C1-8BD6-91A5C402B337}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EBCE87CA-F62A-4A6F-A6D0-FBF17C9288F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EBCE87CA-F62A-4A6F-A6D0-FBF17C9288F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EBCE87CA-F62A-4A6F-A6D0-FBF17C9288F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EBCE87CA-F62A-4A6F-A6D0-FBF17C9288F8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{051FF8E5-850A-4BFE-9496-0AEA5765B708}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{051FF8E5-850A-4BFE-9496-0AEA5765B708}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{051FF8E5-850A-4BFE-9496-0AEA5765B708}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{051FF8E5-850A-4BFE-9496-0AEA5765B708}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5AED942D-63D1-4737-9B21-4DB12A806689}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5AED942D-63D1-4737-9B21-4DB12A806689}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5AED942D-63D1-4737-9B21-4DB12A806689}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5AED942D-63D1-4737-9B21-4DB12A806689}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7C9736F-057A-45DD-9F81-544AC46F1470}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7C9736F-057A-45DD-9F81-544AC46F1470}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7C9736F-057A-45DD-9F81-544AC46F1470}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7C9736F-057A-45DD-9F81-544AC46F1470}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7D234CF7-ABA8-47C6-B6D9-DCF8532F0CA3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D234CF7-ABA8-47C6-B6D9-DCF8532F0CA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7D234CF7-ABA8-47C6-B6D9-DCF8532F0CA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7D234CF7-ABA8-47C6-B6D9-DCF8532F0CA3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4196264D-2D17-436B-92F1-80D62A5F562F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4196264D-2D17-436B-92F1-80D62A5F562F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4196264D-2D17-436B-92F1-80D62A5F562F}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{4196264D-2D17-436B-92F1-80D62A5F562F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4196264D-2D17-436B-92F1-80D62A5F562F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4196264D-2D17-436B-92F1-80D62A5F562F}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{DF3BEA3C-1FB3-4B8F-BC39-EFA71274834F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DF3BEA3C-1FB3-4B8F-BC39-EFA71274834F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DF3BEA3C-1FB3-4B8F-BC39-EFA71274834F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DF3BEA3C-1FB3-4B8F-BC39-EFA71274834F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5F1B01A7-A519-4D55-8F71-9B6B989AF7E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F1B01A7-A519-4D55-8F71-9B6B989AF7E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F1B01A7-A519-4D55-8F71-9B6B989AF7E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F1B01A7-A519-4D55-8F71-9B6B989AF7E5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3A7055B0-FD09-4067-B6CB-73A5CB9855BB}
+	EndGlobalSection
+EndGlobal
