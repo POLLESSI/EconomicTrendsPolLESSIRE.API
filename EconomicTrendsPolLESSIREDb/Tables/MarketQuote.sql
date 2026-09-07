@@ -1,0 +1,22 @@
+﻿CREATE TABLE [dbo].[MarketQuote]
+(
+	[Id] BIGINT IDENTITY(1,1) NOT NULL,
+
+	[InstrumentId] BIGINT NOT NULL,
+	[ProviderId] SMALLINT NOT NULL,
+
+	[TimestampUtc] DATETIME2(3) NOT NULL,
+	[REceivedAtUtc] DATETIME2(3) NOT NULL,
+
+	[BidPrice] DECIMAL(19,8) NULL,
+	[BidSize] DECIMAL(19,8) NULL,
+
+	[AskPrice] DECIMAL(19,8) NULL,
+	[AskSize] DECIMAL(19,8) NULL,
+
+	[Active] BIT DEFAULT (1)
+
+	CONSTRAINT PK_MarketQuote PRIMARY KEY CLUSTERED ([Id])
+)
+
+GO
