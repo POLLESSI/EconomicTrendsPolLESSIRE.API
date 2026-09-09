@@ -6,7 +6,7 @@
 	[ProviderId] SMALLINT NOT NULL,
 
 	[TimestampUtc] DATETIME2(3) NOT NULL,
-	[REceivedAtUtc] DATETIME2(3) NOT NULL,
+	[ReceivedAtUtc] DATETIME2(3) NOT NULL,
 
 	[BidPrice] DECIMAL(19,8) NULL,
 	[BidSize] DECIMAL(19,8) NULL,

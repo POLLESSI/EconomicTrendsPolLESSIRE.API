@@ -17,7 +17,6 @@
     <Folder Include="SignalR\" />
     <Folder Include="Security\" />
     <Folder Include="Resilience\" />
-    <Folder Include="Repositories\" />
     <Folder Include="Persistence\" />
     <Folder Include="Options\" />
     <Folder Include="NoSql\" />

@@ -74,6 +74,11 @@
     <Build Include="Tables\TechnicalIndicator.sql" />
     <Build Include="Tables\MarketSnapshot.sql" />
     <Build Include="Programmability\Types\MarketTradeBatch.sql" />
+    <Build Include="Tables\Users.sql" />
+    <Build Include="Tables\UserSessions.sql" />
+    <Build Include="Tables\UserMessage.sql" />
+    <Build Include="Tables\MistralInteractions.sql" />
+    <Build Include="Tables\MistralJob.sql" />
   </ItemGroup>
   <ItemGroup>
     <None Include="EconomicTrendsPolLESSIREDb.publish.xml" />

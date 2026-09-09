@@ -10,8 +10,6 @@
     <Folder Include="Abstractions\" />
     <Folder Include="Common\" />
     <Folder Include="DTOs\" />
-    <Folder Include="Entities\" />
-    <Folder Include="Interfaces\" />
     <Folder Include="Models\" />
     <Folder Include="ValueObjects\" />
     <Folder Include="Services\" />

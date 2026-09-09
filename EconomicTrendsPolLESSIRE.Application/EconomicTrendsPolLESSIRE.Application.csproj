@@ -7,18 +7,23 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Abstractions\" />
-    <Folder Include="Behaviors\" />
-    <Folder Include="Common\" />
-    <Folder Include="CQRS\" />
+    <Folder Include="CQRS\Commands\Handlers\" />
+    <Folder Include="CQRS\Queries\Handlers\" />
+    <Folder Include="CQRS\Queries\Validations\" />
     <Folder Include="DTOs\" />
-    <Folder Include="Interfaces\" />
+    <Folder Include="Interfaces\ExternalProviders\" />
     <Folder Include="Models\" />
     <Folder Include="Mongo\" />
+    <Folder Include="Mistral\" />
     <Folder Include="Time\" />
     <Folder Include="Services\" />
     <Folder Include="Options\" />
     <Folder Include="Notifications\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MediatR" Version="14.2.0" />
+    <PackageReference Include="Polly" Version="8.7.0" />
   </ItemGroup>
 
 </Project>

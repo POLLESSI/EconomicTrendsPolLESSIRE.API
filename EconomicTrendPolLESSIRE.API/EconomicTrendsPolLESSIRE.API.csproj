@@ -8,8 +8,22 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.30" />
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.22.0" />
+    <PackageReference Include="Polly" Version="8.7.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.22.0" />
   </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\EconomicTrendsPolLESSIRE.Contracts\EconomicTrendsPolLESSIRE.Contracts.csproj" />
+		<ProjectReference Include="..\EconomicTrendsPolLESSIRE.Application\EconomicTrendsPolLESSIRE.Application.csproj" />
+		<ProjectReference Include="..\EconomicTrendsPolLESSIRE.Domain\EconomicTrendsPolLESSIRE.Domain.csproj" />
+		<ProjectReference Include="..\EconomicTrendsPolLESSIRE.DTOs\EconomicTrendsPolLESSIRE.DTOs.csproj" />
+		<ProjectReference Include="..\EconomicTrendsPolLESSIRE.EmergencyIntelligence\EconomicTrendsPolLESSIRE.EmergencyIntelligence.csproj" />
+		<ProjectReference Include="..\EconomicTrendsPolLESSIRE.Hubs\EconomicTrendsPolLESSIRE.Hubs.csproj" />
+		<ProjectReference Include="..\EconomicTrendsPolLESSIRE.Infrastructure\EconomicTrendsPolLESSIRE.Infrastructure.csproj" />
+		<ProjectReference Include="..\EconomicTrendsPolLESSIRE.Shared\EconomicTrendsPolLESSIRE.Shared.csproj" />
+		<ProjectReference Include="..\EconomicTrendsPolLESSIRE.Worker\EconomicTrendsPolLESSIRE.Worker.csproj" />
+	</ItemGroup>
 
   <ItemGroup>
     <Folder Include="BackgroundService\" />
@@ -19,10 +33,8 @@
     <Folder Include="Hubs\Serilog\Sinks\" />
     <Folder Include="Middlewares\" />
     <Folder Include="Models\" />
-    <Folder Include="Tools\" />
     <Folder Include="Services\" />
     <Folder Include="Security\" />
-    <Folder Include="Options\" />
   </ItemGroup>
 
 </Project>
