@@ -1,17 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.37614.0 d17.14
+VisualStudioVersion = 17.14.37614.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EconomicTrendsPolLESSIRE.API", "EconomicTrendPolLESSIRE.API\EconomicTrendsPolLESSIRE.API.csproj", "{CE26A4DC-B11A-4287-ABEA-32631139C0C4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EconomicTrendsPolLESSIRE.Application", "EconomicTrendsPolLESSIRE.Application\EconomicTrendsPolLESSIRE.Application.csproj", "{ACA314BE-70E3-45DD-AF27-38AD21745064}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EconomicTrendsPolLESSIRE.Domain", "EcoomicTrendsPolLESSIRE.Domain\EconomicTrendsPolLESSIRE.Domain.csproj", "{6169F822-C642-40C1-8BD6-91A5C402B337}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EconomicTrendsPolLESSIRE.DTOs", "EcnomicTrendsPolLESSIRE.DTOs\EconomicTrendsPolLESSIRE.DTOs.csproj", "{EBCE87CA-F62A-4A6F-A6D0-FBF17C9288F8}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EconomicTrendsPolLESSIRE.GetHubs", "EconomicTrendsPolLESSIRE.GetHubs\EconomicTrendsPolLESSIRE.GetHubs.csproj", "{051FF8E5-850A-4BFE-9496-0AEA5765B708}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EconomicTrendsPolLESSIRE.Infrastructure", "EconomicTrendsPolLESSIRE.Infrastructure\EconomicTrendsPolLESSIRE.Infrastructure.csproj", "{5AED942D-63D1-4737-9B21-4DB12A806689}"
 EndProject
@@ -23,7 +17,11 @@ Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "EconomicTrendsPolLESSIREDb"
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "EconomicTrendsPolLESSIRE.AI", "EconomicTrendsPolLESSIRE.AI\EconomicTrendsPolLESSIRE.AI.pyproj", "{DF3BEA3C-1FB3-4B8F-BC39-EFA71274834F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EconomicTrendsPolLESSIRE.Contracts", "EconomicTrendsPolLESSIRE.Contracts\EconomicTrendsPolLESSIRE.Contracts.csproj", "{5F1B01A7-A519-4D55-8F71-9B6B989AF7E5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EconomicTrendsPolLESSIRE.Domain", "EconomicTrendsPolLESSIRE.Domain\EconomicTrendsPolLESSIRE.Domain.csproj", "{4749DDBE-2350-3649-F328-0EB9363AE442}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EconomicTrendsPolLESSIRE.DTOs", "EconomicTrendsPolLESSIRE.DTOs\EconomicTrendsPolLESSIRE.DTOs.csproj", "{B55B2658-11AC-4B8E-FEDF-34777B808FCF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EconomicTrendsPolLESSIRE.Hubs", "EconomicTrendsPolLESSIRE.Hubs\EconomicTrendsPolLESSIRE.Hubs.csproj", "{A1CF0DC1-B9D4-3994-5FF4-E91A5EA84132}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,18 +37,6 @@ Global
 		{ACA314BE-70E3-45DD-AF27-38AD21745064}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ACA314BE-70E3-45DD-AF27-38AD21745064}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ACA314BE-70E3-45DD-AF27-38AD21745064}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6169F822-C642-40C1-8BD6-91A5C402B337}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6169F822-C642-40C1-8BD6-91A5C402B337}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6169F822-C642-40C1-8BD6-91A5C402B337}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6169F822-C642-40C1-8BD6-91A5C402B337}.Release|Any CPU.Build.0 = Release|Any CPU
-		{EBCE87CA-F62A-4A6F-A6D0-FBF17C9288F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EBCE87CA-F62A-4A6F-A6D0-FBF17C9288F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EBCE87CA-F62A-4A6F-A6D0-FBF17C9288F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EBCE87CA-F62A-4A6F-A6D0-FBF17C9288F8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{051FF8E5-850A-4BFE-9496-0AEA5765B708}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{051FF8E5-850A-4BFE-9496-0AEA5765B708}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{051FF8E5-850A-4BFE-9496-0AEA5765B708}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{051FF8E5-850A-4BFE-9496-0AEA5765B708}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5AED942D-63D1-4737-9B21-4DB12A806689}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5AED942D-63D1-4737-9B21-4DB12A806689}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5AED942D-63D1-4737-9B21-4DB12A806689}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -73,10 +59,18 @@ Global
 		{DF3BEA3C-1FB3-4B8F-BC39-EFA71274834F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DF3BEA3C-1FB3-4B8F-BC39-EFA71274834F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DF3BEA3C-1FB3-4B8F-BC39-EFA71274834F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5F1B01A7-A519-4D55-8F71-9B6B989AF7E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5F1B01A7-A519-4D55-8F71-9B6B989AF7E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5F1B01A7-A519-4D55-8F71-9B6B989AF7E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5F1B01A7-A519-4D55-8F71-9B6B989AF7E5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4749DDBE-2350-3649-F328-0EB9363AE442}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4749DDBE-2350-3649-F328-0EB9363AE442}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4749DDBE-2350-3649-F328-0EB9363AE442}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4749DDBE-2350-3649-F328-0EB9363AE442}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B55B2658-11AC-4B8E-FEDF-34777B808FCF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B55B2658-11AC-4B8E-FEDF-34777B808FCF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B55B2658-11AC-4B8E-FEDF-34777B808FCF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B55B2658-11AC-4B8E-FEDF-34777B808FCF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1CF0DC1-B9D4-3994-5FF4-E91A5EA84132}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1CF0DC1-B9D4-3994-5FF4-E91A5EA84132}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1CF0DC1-B9D4-3994-5FF4-E91A5EA84132}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1CF0DC1-B9D4-3994-5FF4-E91A5EA84132}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

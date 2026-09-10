@@ -15,7 +15,7 @@ namespace EconomicTrendsPolLESSIRE.API.Tools
         private readonly string _secretKey;
         private readonly int _tokenDuration;
         private readonly string _issuer;
-        private readonly string? _audience;
+        private readonly string _audience;
 
         public TokenGenerator(IConfiguration configuration)
         {
@@ -146,3 +146,4 @@ namespace EconomicTrendsPolLESSIRE.API.Tools
             return new JwtSecurityTokenHandler().WriteToken(jwt);
         }
     }
+}

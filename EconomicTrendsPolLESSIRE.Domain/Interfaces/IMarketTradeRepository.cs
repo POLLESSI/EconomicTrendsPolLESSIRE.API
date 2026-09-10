@@ -1,0 +1,14 @@
+﻿using EconomicTrendsPolLESSIRE.Domain.Entities;
+using System.Diagnostics.Metrics;
+
+namespace EconomicTrendsPolLESSIRE.Domain.Interfaces
+{
+    public interface IMarketTradeRepository
+    {
+        Task<MarketTrade?> SaveMarketTradeAsync(MarketTrade markettrd);
+        Task<IEnumerable<MarketTrade>> GetAllMarketTradeAsync(int limit = 200, CancellationToken ct = default);
+        Task<MarketTrade?> GetMarketTradeByIdAsync(int id);
+        Task<bool> DeleteMarketTradeAsync(int id);
+        Task<int> ArchivePastMarketTradesAsync(CancellationToken ct = default);
+    }
+}

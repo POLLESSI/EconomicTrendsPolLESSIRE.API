@@ -1,0 +1,23 @@
+﻿<!--EconomicTrendsPolLESSIRE.DTOs-->
+
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="DTOs\" />
+    <Folder Include="Extensions\" />
+    <Folder Include="Validation\" />
+  </ItemGroup>
+
+  <ItemGroup>
+	  <ProjectReference Include="..\..\EconomicTrendsPolLESSIRE.Contracts\EconomicTrendsPolLESSIRE.Contracts\EconomicTrendsPolLESSIRE.Contracts.csproj" />
+	<ProjectReference Include="..\EconomicTrendsPolLESSIRE.Domain\EconomicTrendsPolLESSIRE.Domain.csproj" />
+	<ProjectReference Include="..\EconomicTrendsPolLESSIRE.Shared\EconomicTrendsPolLESSIRE.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

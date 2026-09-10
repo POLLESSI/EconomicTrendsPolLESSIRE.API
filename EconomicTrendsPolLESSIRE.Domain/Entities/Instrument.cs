@@ -1,7 +1,7 @@
 ﻿namespace EconomicTrendsPolLESSIRE.Domain.Entities
 {
 #nullable disable
-    public class Instrument
+    public class MarkerSnapshot
     {
         public int Id { get; set; }
         public string Symbol { get; set; }

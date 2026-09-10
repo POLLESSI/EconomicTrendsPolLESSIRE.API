@@ -1,6 +1,6 @@
 ﻿namespace EconomicTrendsPolLESSIRE.Domain.Entities
 {
-    public class MarkerSnapshot
+    public class MarketSnapshot
     {
         public int InstrumentId { get; set; }
         public decimal LastPrice { get; set; } = 0;

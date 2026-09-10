@@ -1,4 +1,6 @@
-﻿namespace EconomicTrendsPolLESSIRE.Domain.Entities
+﻿using EconomicTrendsPolLESSIRE.Contracts.Enums;
+
+namespace EconomicTrendsPolLESSIRE.Domain.Entities
 {
     public class UserSessions
     {

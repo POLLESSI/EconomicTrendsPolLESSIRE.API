@@ -4,34 +4,34 @@ using EconomicTrendsPolLESSIRE.Domain.Entities;
 
 namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
 {
-    public class MarketTradeService : IMarketTradeService
+    public class MarketSnapshotService : IMarkerSnapshotService
     {
-        public Task<bool> DeleteMarketTradeAsync(int id, CancellationToken ct = default)
+        public Task<bool> DeleteMarkerSnapshotAsync(int id, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task<IEnumerable<MarketTrade>> GetAllAsync(int limit = 500, CancellationToken ct = default)
+        public Task<IEnumerable<MarkerSnapshot>> GetAllAsync(int limit = 500, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task<MarketTradeDTO?> GetByIdAsync(int id)
+        public Task<MarkerSnapshotDTO?> GetByIdAsync(int id)
         {
             throw new NotImplementedException();
         }
 
-        public Task<MarketTrade?> GetMarketTradeByIdAsync(int id, CancellationToken ct = default)
+        public Task<MarkerSnapshot?> GetMarkerSnapshotByIdAsync(int id, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task<MarketTradeDTO?> SaveAsync(MarketTradeDTO dto)
+        public Task<MarkerSnapshotDTO?> SaveAsync(MarkerSnapshotDTO dto)
         {
             throw new NotImplementedException();
         }
 
-        public Task<MarketTrade?> SaveMarketTradeAsync(MarketTrade markettrd, CancellationToken ct = default)
+        public Task<MarkerSnapshot?> SaveMarkerSnapshotAsync(MarkerSnapshot markersnsht, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }

@@ -1,0 +1,25 @@
+﻿<!--EconomicTrendsPolLESSIRE.Hubs-->
+
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Extensions\" />
+    <Folder Include="Filters\" />
+    <Folder Include="Hubs\" />
+    <Folder Include="StaticConfig\" />
+    <Folder Include="Services\" />
+  </ItemGroup>
+
+  <ItemGroup>
+	  <ProjectReference Include="..\..\EconomicTrendsPolLESSIRE.Contracts\EconomicTrendsPolLESSIRE.Contracts\EconomicTrendsPolLESSIRE.Contracts.csproj" />
+	<ProjectReference Include="..\EconomicTrendsPolLESSIRE.Shared\EconomicTrendsPolLESSIRE.Shared.csproj" />
+	<ProjectReference Include="..\EconomicTrendsPolLESSIRE.DTOs\EconomicTrendsPolLESSIRE.DTOs.csproj" />
+  </ItemGroup>
+
+</Project>
