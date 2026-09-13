@@ -1,6 +1,5 @@
 ﻿using EconomicTrendsPolLESSIRE.Contracts.Enums;
 using Microsoft.AspNetCore.Http;
-using System.Net.Http;
 
 namespace EconomicTrendsPolLESSIRE.Application.Interfaces
 {

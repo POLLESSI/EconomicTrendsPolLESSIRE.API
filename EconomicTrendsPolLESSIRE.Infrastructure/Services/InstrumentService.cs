@@ -1,11 +1,29 @@
 ﻿using EconomicTrendsPolLESSIRE.Application.Interfaces;
 using EconomicTrendsPolLESSIRE.Contracts.DTOs;
-using System.Diagnostics.Metrics;
+using EconomicTrendsPolLESSIRE.Domain.Interfaces;
+using EconomicTrendsPolLESSIRE.Domain.Entities;
+using EconomicTrendsPolLESSIRE.Hubs.Hubs;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
 
 namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
 {
     public class InstrumentService : IInstrumentService
     {
+    #nullable disable
+        private readonly IInstrumentRepository _instrumentRepository;
+        private readonly HttpClient _http;
+        private readonly IHubContext<MarketDataHub> _marketDataHub;
+        private readonly ILogger<InstrumentService> _logger;
+
+        public InstrumentService(IInstrumentRepository instrumentRepository, HttpClient http, IHubContext<MarketDataHub> marketDataHub, ILogger<InstrumentService> logger)
+        {
+            _instrumentRepository = instrumentRepository;
+            _http = http;
+            _marketDataHub = marketDataHub;
+            _logger = logger;
+        }
+
         public Task<bool> DeleteInstrumentAsync(int id, CancellationToken ct = default)
         {
             throw new NotImplementedException();

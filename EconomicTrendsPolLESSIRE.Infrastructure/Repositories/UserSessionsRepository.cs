@@ -1,11 +1,15 @@
 ﻿using EconomicTrendsPolLESSIRE.Domain.Entities;
 using EconomicTrendsPolLESSIRE.Domain.Interfaces;
 using EconomicTrendsPolLESSIRE.Domain.Queries;
+using System.Data;
+using Dapper;
 
 namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
 {
     public class UserSessionsRepository : IUserSessionsRepository
     {
+        private readonly IDbConnection _cn;
+        public UserSessionsRepository(IDbConnection cn) => _cn = cn;
         public Task<bool> IsRevokedAsync(string jti)
         {
             throw new NotImplementedException();

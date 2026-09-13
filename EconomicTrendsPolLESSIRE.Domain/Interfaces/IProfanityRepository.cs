@@ -1,0 +1,17 @@
+﻿using EconomicTrendsPolLESSIRE.Domain.Common;
+using EconomicTrendsPolLESSIRE.Domain.Entities;
+
+namespace EconomicTrendsPolLESSIRE.Domain.Interfaces
+{
+    public interface IProfanityRepository
+    {
+        Task<IReadOnlyList<ProfanityWord>> GetAllActiveAsync(CancellationToken ct = default);
+        Task<PagedResultDto<ProfanityWord>> GetPagedAsync(int page, int pageSize, string? languageCode = null, string? search = null, CancellationToken ct = default);
+        Task<ProfanityWord?> GetByIdAsync(int id, CancellationToken ct = default);
+        Task<ProfanityWord?> GetByWordAsync(string normalizedWord, CancellationToken ct = default);
+        Task<ProfanityWord> InsertAsync(ProfanityWord entity, CancellationToken ct = default);
+        Task<bool> UpdateAsync(ProfanityWord entity, CancellationToken ct = default);
+        Task<bool> SoftDeleteAsync(int id, CancellationToken ct = default);
+        Task<bool> SetActiveAsync(int id, bool active, CancellationToken ct = default);
+    }
+}

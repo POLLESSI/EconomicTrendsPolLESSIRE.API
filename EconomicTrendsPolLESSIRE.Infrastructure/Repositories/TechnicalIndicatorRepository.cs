@@ -1,10 +1,26 @@
 ﻿using EconomicTrendsPolLESSIRE.Domain.Entities;
 using EconomicTrendsPolLESSIRE.Domain.Interfaces;
+using EconomicTrendsPolLESSIRE.Contracts.DTOs;
+using Dapper;
+using Microsoft.Extensions.Logging;
+using System.Data;
+using System.Data.Common;
+using System.Diagnostics.Metrics;
 
 namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
 {
     public class TechnicalIndicatorRepository : ITechnicalIndicatorRepository
     {
+    #nullable disable
+        private readonly System.Data.IDbConnection _connection;
+        private readonly ILogger<TechnicalIndicatorRepository> _logger;
+
+        public TechnicalIndicatorRepository(IDbConnection connection, ILogger<TechnicalIndicatorRepository> logger)
+        {
+            _connection = connection;
+            _logger = logger;
+        }
+
         public Task<int> ArchivePastTechnicalIndicatorsAsync(CancellationToken ct = default)
         {
             throw new NotImplementedException();

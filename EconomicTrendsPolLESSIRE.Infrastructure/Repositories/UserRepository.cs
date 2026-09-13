@@ -1,10 +1,20 @@
 ﻿using EconomicTrendsPolLESSIRE.Domain.Entities;
 using EconomicTrendsPolLESSIRE.Domain.Interfaces;
+using Dapper;
+using System.Data;
 
 namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
 {
     public class UserRepository : IUserRepository
     {
+        private readonly IDbConnection _connection;
+
+        public UserRepository(IDbConnection connection)
+        {
+            _connection = connection;
+            // Type handler to properly map UserRole <-> int
+            SqlMapper.AddTypeHandler(new RoleTypeHandler());
+        }
         public Task AnonymizeUserAsync(int userId, CancellationToken ct = default)
         {
             throw new NotImplementedException();

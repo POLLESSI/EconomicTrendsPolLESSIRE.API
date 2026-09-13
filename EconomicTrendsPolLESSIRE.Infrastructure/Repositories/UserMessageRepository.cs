@@ -1,10 +1,18 @@
 ﻿using EconomicTrendsPolLESSIRE.Domain.Entities;
 using EconomicTrendsPolLESSIRE.Domain.Interfaces;
+using Dapper;
+using System.Data;
 
 namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
 {
     public class UserMessageRepository : IUserMessageRepository
     {
+        private readonly IDbConnection _db;
+
+        public UserMessageRepository(IDbConnection db)
+        {
+            _db = db;
+        }
         public Task<int> ArchivePastUserMessagesAsync(CancellationToken ct = default)
         {
             throw new NotImplementedException();

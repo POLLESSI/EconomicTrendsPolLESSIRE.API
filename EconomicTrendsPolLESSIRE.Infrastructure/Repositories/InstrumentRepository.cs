@@ -1,10 +1,24 @@
 ﻿using EconomicTrendsPolLESSIRE.Domain.Interfaces;
-using System.Diagnostics.Metrics;
+using EconomicTrendsPolLESSIRE.Domain.Entities;
+using Dapper;
+using Microsoft.Extensions.Logging;
+using System.Data;
+using Instrument = EconomicTrendsPolLESSIRE.Domain.Entities.Instrument;
 
 namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
 {
     public class InstrumentRepository : IInstrumentRepository
     {
+    #nullable disable
+        private readonly IDbConnection _connection;
+        private readonly ILogger<InstrumentRepository> _logger;
+
+        public InstrumentRepository(IDbConnection connection, ILogger<InstrumentRepository> logger)
+        {
+            _connection = connection;
+            _logger = logger;
+        }
+
         public Task<int> ArchivePastInstrumentsAsync(CancellationToken ct = default)
         {
             throw new NotImplementedException();

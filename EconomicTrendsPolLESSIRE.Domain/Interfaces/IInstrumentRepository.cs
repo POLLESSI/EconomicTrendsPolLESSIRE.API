@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.Metrics;
+﻿using EconomicTrendsPolLESSIRE.Domain.Entities;
 
 namespace EconomicTrendsPolLESSIRE.Domain.Interfaces
 {

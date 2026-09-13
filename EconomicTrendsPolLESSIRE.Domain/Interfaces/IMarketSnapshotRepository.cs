@@ -5,7 +5,7 @@ namespace EconomicTrendsPolLESSIRE.Domain.Interfaces
 {
     public interface IMarketSnapshotRepository
     {
-        Task<MarketSnapshot?> SaveMarketSnapshotAsync(Instrument instrument);
+        Task<MarketSnapshot?> SaveMarketSnapshotAsync(MarketSnapshot marketSnpsht);
         Task<IEnumerable<MarketSnapshot>> GetAllMarketSnapshotAsync(int limit = 200, CancellationToken ct = default);
         Task<MarketSnapshot?> GetMarketSnapshotByIdAsync(int id);
         Task<bool> DeleteMarketSnapshotAsync(int id);

@@ -2,11 +2,25 @@
 using EconomicTrendsPolLESSIRE.Contracts.DTOs;
 using EconomicTrendsPolLESSIRE.Contracts.Enums;
 using EconomicTrendsPolLESSIRE.Domain.Entities;
+using EconomicTrendsPolLESSIRE.Domain.Interfaces;
+using Microsoft.AspNetCore.Identity;
 
 namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
 {
     public class UserService : IUserService
     {
+    #nullable disable
+        private readonly IUserRepository _userRepository;
+        private readonly IUserHubService _hubService;
+        private readonly IPasswordHasher<Users> _passwordHasher;
+
+        public UserService(IUserRepository userRepository, IUserHubService hubService, IPasswordHasher<Users> passwordHasher)
+        {
+            _userRepository = userRepository;
+            _hubService = hubService;
+            _passwordHasher = passwordHasher;
+        }
+
         public Task<Users> AuthenticateAsync(string email, string password)
         {
             throw new NotImplementedException();

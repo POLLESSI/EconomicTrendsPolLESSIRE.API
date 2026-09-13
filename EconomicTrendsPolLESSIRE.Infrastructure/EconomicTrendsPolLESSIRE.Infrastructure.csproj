@@ -12,8 +12,7 @@
 
 		<ProjectReference Include="..\..\EconomicTrendsPolLESSIRE.Contracts\EconomicTrendsPolLESSIRE.Contracts\EconomicTrendsPolLESSIRE.Contracts.csproj" />
 		<ProjectReference Include="..\EconomicTrendsPolLESSIRE.Application\EconomicTrendsPolLESSIRE.Application.csproj" />
-		<!--<ProjectReference Include="..\EconomicTrendsPolLESSIRE.Domain\EconomicTrendsPolLESSIRE.Domain.csproj" />
-		<ProjectReference Include="..\EconomicTrendsPolLESSIRE.DTOs\EconomicTrendsPolLESSIRE.DTOs.csproj" />-->
+		<ProjectReference Include="..\EconomicTrendsPolLESSIRE.Hubs\EconomicTrendsPolLESSIRE.Hubs.csproj" />
 		<ProjectReference Include="..\EconomicTrendsPolLESSIRE.Shared\EconomicTrendsPolLESSIRE.Shared.csproj" />
 
 	</ItemGroup>
@@ -29,10 +28,17 @@
 		<Folder Include="SignalR\" />
 		<Folder Include="Security\" />
 		<Folder Include="Resilience\" />
-		<Folder Include="Persistence\" />
 		<Folder Include="Options\" />
 		<Folder Include="NoSql\" />
 		<Folder Include="Services\Monitoring\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="Dapper" Version="2.1.79" />
+	  <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.3.13" />
+	  <PackageReference Include="Microsoft.AspNetCore.SignalR.Core" Version="1.2.13" />
+	  <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.3" />
+	  <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.22.0" />
 	</ItemGroup>
 
 </Project>
