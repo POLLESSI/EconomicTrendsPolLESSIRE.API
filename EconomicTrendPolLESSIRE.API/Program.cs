@@ -1,10 +1,14 @@
 using EconomicTrendsPolLESSIRE.Application.Interfaces;
+using EconomicTrendsPolLESSIRE.Contracts.Hubs;
+using EconomicTrendsPolLESSIRE.Domain.Entities;
 using EconomicTrendsPolLESSIRE.Domain.Interfaces;
 using EconomicTrendsPolLESSIRE.Hubs;
 using EconomicTrendsPolLESSIRE.Hubs.Hubs;
-using EconomicTrendsPolLESSIRE.Contracts.Hubs;
 using EconomicTrendsPolLESSIRE.Infrastructure.Repositories;
+using EconomicTrendsPolLESSIRE.Infrastructure.Security;
 using EconomicTrendsPolLESSIRE.Infrastructure.Services;
+//using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.SqlClient;
 using System.Data;
 
@@ -22,7 +26,7 @@ builder.Services.AddSignalR();
 builder.Services.AddHttpClient();
 
 // SQL
-var connectionString = builder.Configuration.GetConnectionString("Default") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+var connectionString = builder.Configuration.GetConnectionString("Default") ?? throw new InvalidOperationException( "Connection string 'Default' not found.");
 
 builder.Services.AddScoped<IDbConnection>(_ => new SqlConnection(connectionString));
 
@@ -37,7 +41,8 @@ builder.Services.AddScoped<IMarketSnapshotService, MarketSnapshotService>();
 builder.Services.AddScoped<IMarketTradeService, MarketTradeService>();
 builder.Services.AddScoped<IMessageCorrelationService, MessageCorrelationService>();
 builder.Services.AddScoped<IMessageTriageService, MessageTriageService>();
-// builder.Services.AddScoped<IProfanityService, ProfanityAdminService>();
+builder.Services.AddScoped<IProfanityService, ProfanityService>();
+builder.Services.AddScoped<IProfanityAdminService, ProfanityAdminService>();
 builder.Services.AddScoped<ITechnicalIndicatorService, TechnicalIndicatorService>();
 builder.Services.AddScoped<IUserHubService, UserHubService>();
 builder.Services.AddScoped<IUserMessageService, UserMessageService>();
@@ -54,11 +59,13 @@ builder.Services.AddScoped<IMarketSnapshotRepository, MarketSnapshotRepository>(
 builder.Services.AddScoped<IMarketTradeRepository, MarketTradeRepository>();
 builder.Services.AddScoped<IProviderInstrumentRepository, ProviderInstrumentRepository>();
 builder.Services.AddScoped<IProviderRepository, ProviderRepository>();
+builder.Services.AddScoped<IProfanityRepository, ProfanityRepository>();
 builder.Services.AddScoped<ITechnicalIndicatorRepository, TechnicalIndicatorRepository>();
 builder.Services.AddScoped<IUserMessageAdminQueueRepository, UserMessageAdminQueueRepository>();
 builder.Services.AddScoped<IUserMessageRepository, UserMessageRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserSessionsRepository, UserSessionsRepository>();
+builder.Services.AddScoped<IPasswordHasher<Users>, Argon2PasswordHasher>();
 
 var app = builder.Build();
 
@@ -95,7 +102,6 @@ app.MapHub<MarketDataHub>("/hubs/market-data");
 app.MapHub<UserHub>($"/{UserHubMethods.HubPath}");
 
 app.Run();
-
 internal record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {
     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);

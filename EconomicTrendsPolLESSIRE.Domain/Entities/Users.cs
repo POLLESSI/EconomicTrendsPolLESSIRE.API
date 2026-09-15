@@ -2,6 +2,7 @@
 {
     public class Users
     {
+    #nullable disable
         public int Id { get; set; }
         public string Email { get; set; }
         public string PasswordHachV2 { get; set; }

@@ -9,7 +9,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Konscious.Security.Cryptography.Argon2" Version="1.3.1" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.30" />
+	<PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.3" />
     <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.22.0" />
     <PackageReference Include="Polly" Version="8.7.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
@@ -23,7 +25,6 @@
 		<ProjectReference Include="..\EconomicTrendsPolLESSIRE.Hubs\EconomicTrendsPolLESSIRE.Hubs.csproj" />
 		<ProjectReference Include="..\EconomicTrendsPolLESSIRE.Infrastructure\EconomicTrendsPolLESSIRE.Infrastructure.csproj" />
 		<ProjectReference Include="..\EconomicTrendsPolLESSIRE.Shared\EconomicTrendsPolLESSIRE.Shared.csproj" />
-		<ProjectReference Include="..\EconomicTrendsPolLESSIRE.Worker\EconomicTrendsPolLESSIRE.Worker.csproj" />
 	</ItemGroup>
 
   <ItemGroup>

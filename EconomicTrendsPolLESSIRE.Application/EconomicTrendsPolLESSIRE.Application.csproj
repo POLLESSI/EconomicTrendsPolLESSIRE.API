@@ -24,17 +24,18 @@
   </ItemGroup>
 
   <ItemGroup>
+	<FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="MediatR" Version="14.2.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.3.13" />
     <PackageReference Include="Polly" Version="8.7.0" />
-    <PackageReference Include="Volo.Abp.Ddd.Domain" Version="10.6.0" />
   </ItemGroup>
 
   <ItemGroup>
 	  <ProjectReference Include="..\..\EconomicTrendsPolLESSIRE.Contracts\EconomicTrendsPolLESSIRE.Contracts\EconomicTrendsPolLESSIRE.Contracts.csproj" />
 	  <ProjectReference Include="..\EconomicTrendsPolLESSIRE.Domain\EconomicTrendsPolLESSIRE.Domain.csproj" />
 	  <ProjectReference Include="..\EconomicTrendsPolLESSIRE.Shared\EconomicTrendsPolLESSIRE.Shared.csproj" />
-	  <!--<ProjectReference Include="..\EconomicTrendsPolLESSIRE.Hubs\EconomicTrendsPolLESSIRE.Hubs.csproj" />-->
   </ItemGroup>
 
 </Project>
