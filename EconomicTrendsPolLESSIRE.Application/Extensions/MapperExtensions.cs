@@ -4,8 +4,6 @@ using EconomicTrendsPolLESSIRE.Contracts.Enums;
 using EconomicTrendsPolLESSIRE.Domain.Entities;
 using System.Runtime.CompilerServices;
 //using EconomicTrendsPolLESSIRE.Domain.ValueObjects;
-//using EconomicTrendsPolLESSIRE.DTOs.DTOs;
-
 
 namespace EconomicTrendsPolLESSIRE.Application.Extensions
 {
@@ -201,25 +199,65 @@ namespace EconomicTrendsPolLESSIRE.Application.Extensions
             };
         }
 
-        //public static MessageTriageResult MapToMessageTriageResult(this MessageTriageResultDTO dto)
-        //{
+        public static MessageTriageResult MapToMessageTriageResult(this MessageTriageResultDTO dto)
+        {
+            return new MessageTriageResult
+            {
+                RequiresAdminReview = dto.RequiresAdminReview,
+                Category = dto.Category,
+                Priority = dto.Priority,
+                Confidence = dto.Confidence,
+                ClassificationSource = dto.ClassificationSource
+            };
+        }
 
-        //}
+        public static MessageTriageResultDTO MapToMessageTriageResultDTO(this MessageTriageResult entity)
+        {
+            if (entity is null) return null!;
 
-        //public static MessageTriageResultDTO MapToMessageTriageResultDTO(this MessageTriageResult entity)
-        //{
-            //if (entity is null) return null!;
-        //}
+            return new MessageTriageResultDTO
+            {
+                RequiresAdminReview = entity.RequiresAdminReview,
+                Category = entity.Category,
+                Priority = entity.Priority,
+                Confidence = entity.Confidence,
+                ClassificationSource = entity.ClassificationSource
+            };
+        }
 
-        //public static ProfanityWord MapToProfanityWord(this ProfanityWordDTO dto)
-        //{
+        public static ProfanityWord MapToProfanityWord(this ProfanityWordDTO dto)
+        {
+            return new ProfanityWord
+            {
+                Id = dto.Id,
+                Word = dto.Word,
+                NormalizedWord = dto.NormalizedWord,
+                LanguageCode = dto.LanguageCode,
+                Weight = dto.Weight,
+                IsRegex = dto.IsRegex,
+                Category = dto.Category,
+                CreatedAtUtc = dto.CreatedAtUtc,
+                UpdatedAtUtc = dto.UpdatedAtUtc
+            };
+        }
 
-        //}
+        public static ProfanityWordDTO MapToProfanityWordDTO(this ProfanityWord entity)
+        {
+            if (entity is null) return null!;
 
-        //public static ProfanityWordDTO MapToProfanityWordDTO(this ProfanityWord entity)
-        //{
-            //if (entity is null) return null!;
-        //}
+            return new ProfanityWordDTO
+            {
+                Id = entity.Id,
+                Word = entity.Word,
+                NormalizedWord = entity.NormalizedWord,
+                LanguageCode = entity.LanguageCode,
+                Weight = entity.Weight,
+                IsRegex = entity.IsRegex,
+                Category = entity.Category,
+                CreatedAtUtc = entity.CreatedAtUtc,
+                UpdatedAtUtc = entity.UpdatedAtUtc
+            };
+        }
 
         public static Provider MapToProvider(this ProviderDTO dto)
         {
@@ -339,15 +377,43 @@ namespace EconomicTrendsPolLESSIRE.Application.Extensions
             };
         }
 
-        //public static UserMessageAdminQueue MapToUsermessageAdminQueue(this UserMessageAdminQueDTO dto)
-        //{
+        public static UserMessageAdminQueue MapToUsermessageAdminQueue(this UserMessageAdminQueueDTO dto)
+        {
+            return new UserMessageAdminQueue
+            {
+                Id = dto.Id,
+                MessageId = dto.MessageId,
+                Category = dto.Category,
+                Priority = dto.Priority,
+                Status = dto.Status,
+                Confidence = dto.Confidence,
+                ClassificationSource = dto.ClassificationSource,
+                AssignedTo = dto.AssignedTo,
+                AdminNote = dto.AdminNote,
+                CreatedAtUtc = dto.CreatedAtUtc,
+                UpdatedAtUtc = dto.UpdatedAtUtc,
+                ResolvedAtUtc = dto.ResolvedAtUtc
+            };
+        }
 
-        //}
-
-        //public static UserMessageAdminQueueDTO MapToUsermessageAdminQueueDTO(this UserMessageAdminQueue entity)
-        //{
-
-        //}
+        public static UserMessageAdminQueueDTO MapToUsermessageAdminQueueDTO(this UserMessageAdminQueue entity)
+        {
+            return new UserMessageAdminQueueDTO
+            {
+                Id = entity.Id,
+                MessageId = entity.MessageId,
+                Category = entity.Category,
+                Priority = entity.Priority,
+                Status = entity.Status,
+                Confidence = entity.Confidence,
+                ClassificationSource = entity.ClassificationSource,
+                AssignedTo = entity.AssignedTo,
+                AdminNote = entity.AdminNote,
+                CreatedAtUtc = entity.CreatedAtUtc,
+                UpdatedAtUtc = entity.UpdatedAtUtc,
+                ResolvedAtUtc = entity.ResolvedAtUtc
+            };
+        }
 
         public static Users MapToUsers(this UserDTO dto)
         {
