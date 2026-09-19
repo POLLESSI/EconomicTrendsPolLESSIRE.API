@@ -1,10 +1,15 @@
-﻿using EconomicTrendsPolLESSIRE.Application.Interfaces;
+﻿using EconomicTrendsPolLESSIRE.Application.Common;
+using EconomicTrendsPolLESSIRE.Application.Interfaces;
 using EconomicTrendsPolLESSIRE.Contracts.DTOs;
+using EconomicTrendsPolLESSIRE.Contracts.Hubs;
 using EconomicTrendsPolLESSIRE.Domain.Entities;
 using EconomicTrendsPolLESSIRE.Domain.Interfaces;
 using EconomicTrendsPolLESSIRE.Hubs.Hubs;
+using EconomicTrendsPolLESSIRE.Infrastructure.Repositories;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.Metrics;
 
 namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
 {
@@ -24,24 +29,55 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
             _logger = logger;
         }
 
-        public Task<bool> DeleteProviderInstrumentAsync(int id, CancellationToken ct = default)
+        public async Task<bool> DeleteProviderInstrumentAsync(int id, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            var ok = await _providerInstrumentRepository.DeleteProviderInstrumentAsync(id);
+
+            if (ok)
+            {
+                await _marketDataHub.Clients.All.SendAsync(MarketHubMethods.ToClient.ProviderInstrumentArchived, id, ct);
+            }
+
+            return ok;
         }
 
-        public Task<IEnumerable<ProviderInstrument>> GetAllAsync(int limit = 500, CancellationToken ct = default)
+        public async Task<IEnumerable<ProviderInstrument>> GetAllAsync(int limit = 500, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            return await _providerInstrumentRepository.GetAllProviderInstrumentAsync(limit, ct);
         }
 
-        public Task<ProviderInstrumentDTO?> GetByIdAsync(int id)
+        public async Task<ProviderInstrumentDTO?> GetByIdAsync(int id)
         {
-            throw new NotImplementedException();
+            if (id <= 0)
+            {
+                throw new ArgumentException("The provider instrument ID must be greater than zero.", nameof(id));
+            }
+
+            var providerInstrumentEntity = await _providerInstrumentRepository.GetProviderInstrumentByIdAsync(id);
+
+            if (providerInstrumentEntity == null || !providerInstrumentEntity.Active)
+            {
+                return null;
+            }
+
+            return providerInstrumentEntity.MapToProviderInstrumentDTO();
         }
 
-        public Task<ProviderInstrument?> GetProviderInstrumentByIdAsync(int id, CancellationToken ct = default)
+        public async Task<ProviderInstrument?> GetProviderInstrumentByIdAsync(int id, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            if (id <= 0)
+            {
+                throw new ArgumentException("The provider instrument ID must be greater than zero.", nameof(id));
+            }
+
+            var providerInstrumentEntity = await _providerInstrumentRepository.GetProviderInstrumentByIdAsync(id, ct);
+
+            if (providerInstrumentEntity == null || !providerInstrumentEntity.Active)
+            {
+                return null;
+            }
+
+            return providerInstrumentEntity;
         }
 
         public Task<ProviderInstrumentDTO?> SaveAsync(ProviderInstrumentDTO dto)
@@ -49,9 +85,89 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
             throw new NotImplementedException();
         }
 
-        public Task<ProviderInstrument?> SaveProviderInstrumentAsync(ProviderInstrument providerinstrum, CancellationToken ct = default)
+        public async Task<ProviderInstrument?> SaveProviderInstrumentAsync(ProviderInstrument providerinstrum, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            return await _providerInstrumentRepository.SaveProviderInstrumentAsync(providerinstrum);
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Copyrigtht (c) EconomicTrendsPolLESSIRE https://github.com/POLLESSI/EconomicTrendsPolLESSIRE. All rights reserved.

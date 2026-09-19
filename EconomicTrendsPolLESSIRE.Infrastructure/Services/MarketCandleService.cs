@@ -1,10 +1,14 @@
-﻿using EconomicTrendsPolLESSIRE.Application.Interfaces;
+﻿using EconomicTrendsPolLESSIRE.Application.Common;
+using EconomicTrendsPolLESSIRE.Application.Extensions;
+using EconomicTrendsPolLESSIRE.Application.Interfaces;
 using EconomicTrendsPolLESSIRE.Contracts.DTOs;
+using EconomicTrendsPolLESSIRE.Contracts.Hubs;
 using EconomicTrendsPolLESSIRE.Domain.Entities;
 using EconomicTrendsPolLESSIRE.Domain.Interfaces;
 using EconomicTrendsPolLESSIRE.Hubs.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+using System.ComponentModel.DataAnnotations;
 
 namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
 {
@@ -24,34 +28,148 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
             _logger = logger;
         }
 
-        public Task<bool> DeleteMarketCandleAsync(int id, CancellationToken ct = default)
+        public async Task<bool> DeleteMarketCandleAsync(int id, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            var ok = await _marketCandleRepository.DeleteMarketCandleAsync(id);
+
+            if (ok)
+            {
+                await _marketDataHub.Clients.All.SendAsync(MarketHubMethods.ToClient.MarketCandleArchived, id, ct);
+            }
+
+            return ok;
         }
 
-        public Task<IEnumerable<MarketCandle>> GetAllAsync(int limit = 500, CancellationToken ct = default)
+        public async Task<IEnumerable<MarketCandle>> GetAllAsync(int limit = 500, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            return await _marketCandleRepository.GetAllMarketCandleAsync(limit, ct);
         }
 
-        public Task<MarketCandleDTO?> GetByIdAsync(int id)
+        public async Task<MarketCandleDTO?> GetByIdAsync(int id)
         {
-            throw new NotImplementedException();
+            if (id <= 0)
+            {
+                throw new ArgumentException("The instrument ID must be greater than zero.", nameof(id));
+            }
+
+            var marketCandleEntity = await _marketCandleRepository.GetMarketCandleByIdAsync(id);
+
+            if (marketCandleEntity == null || !marketCandleEntity.Active)
+            {
+                return null;
+            }
+
+            return marketCandleEntity.MapToMarketCandleDTO();
         }
 
-        public Task<MarketCandle?> GetMarketCandleByIdAsync(int id, CancellationToken ct = default)
+        public async Task<MarketCandle?> GetMarketCandleByIdAsync(int id, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            if (id <= 0)
+            {
+                throw new ArgumentException("The instrument ID must be greater than zero.", nameof(id));
+            }
+
+            var marketCandleEntity = await _marketCandleRepository.GetMarketCandleByIdAsync(id, ct);
+
+            if (marketCandleEntity == null || !marketCandleEntity.Active)
+            {
+                return null;
+            }
+
+            return marketCandleEntity;
         }
 
         public Task<MarketCandleDTO?> SaveAsync(MarketCandleDTO dto)
         {
             throw new NotImplementedException();
         }
-
-        public Task<MarketCandle?> SaveInstrumentAsync(MarketCandle marketcndl, CancellationToken ct = default)
+        public async Task<MarketCandle?> SaveMarketCandleAsync(MarketCandle marketcndl, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            if (!Validators.IsFutureOrToday(marketcndl.OpenTimeUtc))
+            {
+                throw new ValidationException("The date must be today or in the future.");
+            }
+
+            return await _marketCandleRepository.SaveMarketCandleAsync(marketcndl);
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Copyrigtht (c) EconomicTrendsPolLESSIRE https://github.com/POLLESSI/EconomicTrendsPolLESSIRE. All rights reserved.

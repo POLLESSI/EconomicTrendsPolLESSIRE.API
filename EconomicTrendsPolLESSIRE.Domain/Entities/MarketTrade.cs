@@ -3,7 +3,7 @@
     public class MarketTrade
     {
         public int Id { get; set; }
-        public int InstrumentId { get; set; }
+        public long InstrumentId { get; set; }
         public int ProviderId { get; set; }
         public DateTime TimestampUtc { get; set; }
         public DateTime ReceivedAtUtc { get; set; }
@@ -13,3 +13,97 @@
         public bool Active { get; set; }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Copyrigtht (c) EconomicTrendsPolLESSIRE https://github.com/POLLESSI/EconomicTrendsPolLESSIRE. All rights reserved.

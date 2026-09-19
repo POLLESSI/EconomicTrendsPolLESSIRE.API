@@ -2,7 +2,7 @@
 {
     public class MarketCandle
     {
-        public int InstrumentId { get; set; }
+        public long InstrumentId { get; set; }
         public int IntervalCode { get; set; }
         public DateTime OpenTimeUtc { get; set; }
         public decimal OpenPrice { get; set; }
@@ -16,3 +16,84 @@
         public bool Active { get; set; }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Copyrigtht (c) EconomicTrendsPolLESSIRE https://github.com/POLLESSI/EconomicTrendsPolLESSIRE. All rights reserved.

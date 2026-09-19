@@ -79,7 +79,7 @@ namespace EconomicTrendsPolLESSIRE.Application.Extensions
 
             return new MarketCandleDTO
             {
-                InstrumentId = entity.InstrumentId,
+                InstrumentId = (int)entity.InstrumentId,
                 IntervalCode = entity.IntervalCode,
                 OpenTimeUtc = entity.OpenTimeUtc,
                 OpenPrice = entity.OpenPrice,
@@ -116,7 +116,7 @@ namespace EconomicTrendsPolLESSIRE.Application.Extensions
             return new MarketQuoteDTO
             {
                 Id = entity.Id,
-                InstrumentId = entity.InstrumentId,
+                InstrumentId = (int)entity.InstrumentId,
                 ProviderId = entity.ProviderId,
                 TimestampUtc = entity.TimestampUtc,
                 ReceivedAtUtc = entity.ReceivedAtUtc,
@@ -152,7 +152,7 @@ namespace EconomicTrendsPolLESSIRE.Application.Extensions
 
             return new MarketSnapshotDTO
             {
-                InstrumentId = entity.InstrumentId,
+                InstrumentId = (int)entity.InstrumentId,
                 LastPrice = entity.LastPrice,
                 BidPrice = entity.BidPrice,
                 AskPrice = entity.AskPrice,
@@ -189,7 +189,7 @@ namespace EconomicTrendsPolLESSIRE.Application.Extensions
             return new MarketTradeDTO
             {
                 Id = entity.Id,
-                InstrumentId = entity.InstrumentId,
+                InstrumentId = (int)entity.InstrumentId,
                 ProviderId = entity.ProviderId,
                 TimestampUtc = entity.TimestampUtc,
                 ReceivedAtUtc = entity.ReceivedAtUtc,
@@ -198,6 +198,30 @@ namespace EconomicTrendsPolLESSIRE.Application.Extensions
                 SequenceNumber = entity.SequenceNumber
             };
         }
+
+        // Entity -> DTO (UserMessage -> ClientMessageDTO)
+        public static ClientMessageDTO MapToClientMessageDTO(this UserMessage m)
+        {
+            if (m is null) return null!;
+
+            return new ClientMessageDTO
+            {
+                Id = m.Id,
+                UserId = m.UserId,
+                SourceType = m.SourceType,
+                SourceId = m.SourceId,
+                RelatedName = m.RelatedName,
+                Latitude = m.Latitude.HasValue ? (double?)m.Latitude.Value : null,
+                Longitude = m.Longitude.HasValue ? (double?)m.Longitude.Value : null,
+                Tags = m.Tags,
+                Content = m.Content ?? string.Empty,
+                CreatedAt = m.CreatedAt
+            };
+        }
+
+        // Optional: collection helper
+        public static List<ClientMessageDTO> MapToClientMessageDTOs(this IEnumerable<UserMessage> items)
+            => items?.Select(x => x.MapToClientMessageDTO()).ToList() ?? new List<ClientMessageDTO>();
 
         public static MessageTriageResult MapToMessageTriageResult(this MessageTriageResultDTO dto)
         {
@@ -302,7 +326,7 @@ namespace EconomicTrendsPolLESSIRE.Application.Extensions
             return new ProviderInstrumentDTO
             {
                 ProviderId = entity.ProviderId,
-                InstrumentId = entity.InstrumentId,
+                InstrumentId = (int)entity.InstrumentId,
                 ProviderSymbol = entity.ProviderSymbol,
                 Realtime = entity.Realtime,
                 DelaySeconds = entity.DelaySeconds
@@ -330,7 +354,7 @@ namespace EconomicTrendsPolLESSIRE.Application.Extensions
 
             return new TechnicalIndicatorDTO
             {
-                InstrumentId = entity.InstrumentId,
+                InstrumentId = (int)entity.InstrumentId,
                 IntervalCode = entity.IntervalCode,
                 TimestampUtc = entity.TimestampUtc,
                 IndicatorType = entity.IndicatorType,
@@ -421,7 +445,7 @@ namespace EconomicTrendsPolLESSIRE.Application.Extensions
             {
                 Id = dto.Id,
                 Email = dto.Email,
-                PasswordHachV2 = dto.PasswordHachV2,
+                PasswordHashV2 = dto.PasswordHachV2,
                 SecurityStamp = dto.SecurityStamp,
                 Role = dto.Role,
                 Status = dto.Status
@@ -436,7 +460,7 @@ namespace EconomicTrendsPolLESSIRE.Application.Extensions
             {
                 Id = entity.Id,
                 Email = entity.Email,
-                PasswordHachV2 = entity.PasswordHachV2,
+                PasswordHachV2 = entity.PasswordHashV2,
                 SecurityStamp = entity.SecurityStamp,
                 Role = entity.Role,
                 Status = entity.Status
@@ -479,3 +503,93 @@ namespace EconomicTrendsPolLESSIRE.Application.Extensions
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Copyrigtht (c) EconomicTrendsPolLESSIRE https://github.com/POLLESSI/EconomicTrendsPolLESSIRE. All rights reserved.

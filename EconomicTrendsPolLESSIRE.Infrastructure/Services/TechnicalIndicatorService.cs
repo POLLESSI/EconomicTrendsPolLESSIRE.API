@@ -1,11 +1,15 @@
-﻿using EconomicTrendsPolLESSIRE.Application.Interfaces;
+﻿using EconomicTrendsPolLESSIRE.Application.Common;
+using EconomicTrendsPolLESSIRE.Application.Interfaces;
 using EconomicTrendsPolLESSIRE.Contracts.DTOs;
+using EconomicTrendsPolLESSIRE.Contracts.Hubs;
 using EconomicTrendsPolLESSIRE.Domain.Entities;
 using EconomicTrendsPolLESSIRE.Domain.Interfaces;
-using EconomicTrendsPolLESSIRE.Infrastructure.Repositories;
 using EconomicTrendsPolLESSIRE.Hubs.Hubs;
+using EconomicTrendsPolLESSIRE.Infrastructure.Repositories;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.Metrics;
 
 namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
 {
@@ -25,24 +29,55 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
             _logger = logger;
         }
 
-        public Task<bool> DeleteTechnicalIndicatorAsync(int id, CancellationToken ct = default)
+        public async Task<bool> DeleteTechnicalIndicatorAsync(int id, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            var ok = await _technicalIndicatorRepository.DeleteTechnicalIndicatorAsync(id);
+
+            if (ok)
+            {
+                await _marketDataHub.Clients.All.SendAsync(MarketHubMethods.ToClient.TechnicalIndicatorArchived, id, ct);
+            }
+
+            return ok;
         }
 
-        public Task<IEnumerable<TechnicalIndicator>> GetAllAsync(int limit = 500, CancellationToken ct = default)
+        public async Task<IEnumerable<TechnicalIndicator>> GetAllAsync(int limit = 500, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            return await _technicalIndicatorRepository.GetAllTechnicalIndicatorAsync(limit, ct);
         }
 
-        public Task<TechnicalIndicatorDTO?> GetByIdAsync(int id)
+        public async Task<TechnicalIndicatorDTO?> GetByIdAsync(int id)
         {
-            throw new NotImplementedException();
+            if (id <= 0)
+            {
+                throw new ArgumentException("The technical indicator ID must be greater than zero.", nameof(id));
+            }
+
+            var technicalIndicatorEntity = await _technicalIndicatorRepository.GetTechnicalIndicatorByIdAsync(id);
+
+            if (technicalIndicatorEntity == null || !technicalIndicatorEntity.Active)
+            {
+                return null;
+            }
+
+            return technicalIndicatorEntity.MapToTechnicalIndicatorDTO();
         }
 
-        public Task<TechnicalIndicator?> GetTechnicalIndicatorByIdAsync(int id, CancellationToken ct = default)
+        public async Task<TechnicalIndicator?> GetTechnicalIndicatorByIdAsync(int id, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            if (id <= 0)
+            {
+                throw new ArgumentException("The technical indicator ID must be greater than zero.", nameof(id));
+            }
+
+            var technicalIndicatorEntity = await _technicalIndicatorRepository.GetTechnicalIndicatorByIdAsync(id, ct);
+
+            if (technicalIndicatorEntity == null || !technicalIndicatorEntity.Active)
+            {
+                return null;
+            }
+
+            return technicalIndicatorEntity;
         }
 
         public Task<TechnicalIndicatorDTO?> SaveAsync(TechnicalIndicatorDTO dto)
@@ -50,9 +85,106 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
             throw new NotImplementedException();
         }
 
-        public Task<TechnicalIndicator?> SaveTechnicalIndicatorAsync(TechnicalIndicator technicalIndic, CancellationToken ct = default)
+        public async Task<TechnicalIndicator?> SaveTechnicalIndicatorAsync(TechnicalIndicator technicalIndic, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            if (!Validators.IsFutureOrToday(technicalIndic.TimestampUtc))
+            {
+                throw new ValidationException("The date must be today or in the future.");
+            }
+
+            return await _technicalIndicatorRepository.SaveTechnicalIndicatorAsync(technicalIndic);
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Copyrigtht (c) EconomicTrendsPolLESSIRE https://github.com/POLLESSI/EconomicTrendsPolLESSIRE. All rights reserved.
