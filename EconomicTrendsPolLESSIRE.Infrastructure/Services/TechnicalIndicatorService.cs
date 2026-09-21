@@ -1,5 +1,6 @@
 ﻿using EconomicTrendsPolLESSIRE.Application.Common;
 using EconomicTrendsPolLESSIRE.Application.Interfaces;
+using EconomicTrendsPolLESSIRE.Application.Extensions;
 using EconomicTrendsPolLESSIRE.Contracts.DTOs;
 using EconomicTrendsPolLESSIRE.Contracts.Hubs;
 using EconomicTrendsPolLESSIRE.Domain.Entities;
@@ -29,13 +30,21 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
             _logger = logger;
         }
 
-        public async Task<bool> DeleteTechnicalIndicatorAsync(int id, CancellationToken ct = default)
+        public async Task<bool> DeleteTechnicalIndicatorAsync(long instrumentId, int intervalCode, int indicatorType, DateTime timestampUtc, CancellationToken ct = default)
         {
-            var ok = await _technicalIndicatorRepository.DeleteTechnicalIndicatorAsync(id);
+            var ok = await _technicalIndicatorRepository.DeleteTechnicalIndicatorAsync( instrumentId, intervalCode, indicatorType, timestampUtc, ct);
 
             if (ok)
             {
-                await _marketDataHub.Clients.All.SendAsync(MarketHubMethods.ToClient.TechnicalIndicatorArchived, id, ct);
+                await _marketDataHub.Clients.All.SendAsync(MarketHubMethods.ToClient.TechnicalIndicatorArchived,
+                new
+                {
+                    InstrumentId = instrumentId,
+                    IntervalCode = intervalCode,
+                    IndicatorType = indicatorType,
+                    TimestampUtc = timestampUtc
+                },
+                ct);
             }
 
             return ok;
@@ -46,14 +55,14 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
             return await _technicalIndicatorRepository.GetAllTechnicalIndicatorAsync(limit, ct);
         }
 
-        public async Task<TechnicalIndicatorDTO?> GetByIdAsync(int id)
+        public async Task<TechnicalIndicatorDTO?> GetByIdAsync(long instrumentId, int intervalCode, int indicatorType, DateTime timestampUtc, CancellationToken ct = default)
         {
-            if (id <= 0)
+            if (instrumentId <= 0)
             {
-                throw new ArgumentException("The technical indicator ID must be greater than zero.", nameof(id));
+                throw new ArgumentException("The technical indicator ID must be greater than zero.", nameof(instrumentId));
             }
 
-            var technicalIndicatorEntity = await _technicalIndicatorRepository.GetTechnicalIndicatorByIdAsync(id);
+            var technicalIndicatorEntity = await _technicalIndicatorRepository.GetTechnicalIndicatorByIdAsync(instrumentId, intervalCode, indicatorType, timestampUtc, ct);
 
             if (technicalIndicatorEntity == null || !technicalIndicatorEntity.Active)
             {
@@ -63,14 +72,14 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
             return technicalIndicatorEntity.MapToTechnicalIndicatorDTO();
         }
 
-        public async Task<TechnicalIndicator?> GetTechnicalIndicatorByIdAsync(int id, CancellationToken ct = default)
+        public async Task<TechnicalIndicator?> GetTechnicalIndicatorByIdAsync(long instrumentId, int intervalCode, int indicatorType, DateTime timestampUtc, CancellationToken ct = default)
         {
-            if (id <= 0)
+            if (instrumentId <= 0)
             {
-                throw new ArgumentException("The technical indicator ID must be greater than zero.", nameof(id));
+                throw new ArgumentException("The technical indicator ID must be greater than zero.", nameof(instrumentId));
             }
 
-            var technicalIndicatorEntity = await _technicalIndicatorRepository.GetTechnicalIndicatorByIdAsync(id, ct);
+            var technicalIndicatorEntity = await _technicalIndicatorRepository.GetTechnicalIndicatorByIdAsync(instrumentId, intervalCode, indicatorType, timestampUtc, ct);
 
             if (technicalIndicatorEntity == null || !technicalIndicatorEntity.Active)
             {

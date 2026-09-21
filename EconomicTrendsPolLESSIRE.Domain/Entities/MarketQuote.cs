@@ -2,7 +2,7 @@
 {
     public class MarketQuote
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
         public long InstrumentId { get; set; }
         public int ProviderId { get; set; }
         public DateTime TimestampUtc { get; set; }

@@ -1,5 +1,4 @@
 ﻿using EconomicTrendsPolLESSIRE.Domain.Entities;
-using System.Diagnostics.Metrics;
 
 namespace EconomicTrendsPolLESSIRE.Domain.Interfaces
 {
@@ -7,8 +6,8 @@ namespace EconomicTrendsPolLESSIRE.Domain.Interfaces
     {
         Task<ProviderInstrument?> SaveProviderInstrumentAsync(ProviderInstrument providinstrument);
         Task<IEnumerable<ProviderInstrument>> GetAllProviderInstrumentAsync(int limit = 200, CancellationToken ct = default);
-        Task<ProviderInstrument?> GetProviderInstrumentByIdAsync(int id);
-        Task<bool> DeleteProviderInstrumentAsync(int id);
+        Task<ProviderInstrument?> GetProviderInstrumentByIdAsync(int providerId, long instrumentId, CancellationToken ct = default);
+        Task<bool> DeleteProviderInstrumentAsync(int providerId, long instrumentId);
         Task<int> ArchivePastProviderInstrumentsAsync(CancellationToken ct = default);
     }
 }

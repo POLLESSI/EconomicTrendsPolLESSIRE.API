@@ -5,12 +5,12 @@ namespace EconomicTrendsPolLESSIRE.Application.Interfaces
 {
     public interface IMarketCandleService
     {
-        Task<MarketCandleDTO?> GetByIdAsync(int id);
+        Task<MarketCandleDTO?> GetByIdAsync(long instrumentId);
         Task<MarketCandleDTO?> SaveAsync(MarketCandleDTO dto);
         Task<MarketCandle?> SaveMarketCandleAsync(MarketCandle marketcndl, CancellationToken ct = default);
         Task<IEnumerable<MarketCandle>> GetAllAsync(int limit = 500, CancellationToken ct = default);
-        Task<MarketCandle?> GetMarketCandleByIdAsync(int id, CancellationToken ct = default);
-        Task<bool> DeleteMarketCandleAsync(int id, CancellationToken ct = default);
+        Task<MarketCandle?> GetMarketCandleByIdAsync(long instrumentId, CancellationToken ct = default);
+        Task<bool> DeleteMarketCandleAsync(long instrumentId, CancellationToken ct = default);
     }
 }
 

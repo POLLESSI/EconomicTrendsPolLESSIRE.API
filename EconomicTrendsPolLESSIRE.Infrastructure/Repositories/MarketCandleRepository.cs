@@ -45,11 +45,11 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
             }
         }
 
-        public async Task<bool> DeleteMarketCandleAsync(int id)
+        public async Task<bool> DeleteMarketCandleAsync(long instrumentId)
         {
             const string sql = @"DELETE FROM MarketCandle WHERE InstrumentId = @InstrumentId";
             DynamicParameters parameters = new DynamicParameters();
-            parameters.Add("InstrumentId", id, DbType.Int32);
+            parameters.Add("InstrumentId", instrumentId, DbType.Int32);
 
             var affectedRows = await _connection.ExecuteAsync(sql, parameters);
             return affectedRows > 0;
@@ -67,7 +67,7 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
             return _connection.QueryAsync<MarketCandle>(new CommandDefinition(sql, new { Limit = limit }, cancellationToken: ct));
         }
 
-        public async Task<MarketCandle?> GetMarketCandleByIdAsync(int id, CancellationToken ct = default)
+        public async Task<MarketCandle?> GetMarketCandleByIdAsync(long instrumentId, CancellationToken ct = default)
         {
             const string sql = @"
                             SELECT TOP(1) [InstrumentId], [IntervalCode], [OpenTimeUtc], [OpenPrice], [HighPrice], [LowPrice], [ClosePrice], [Volume], [VWAP], [TradeCount], [IsFinal], [Active]
@@ -79,7 +79,7 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
             try
             {
                 DynamicParameters parameters = new DynamicParameters();
-                parameters.Add("@InstrumentId", id, DbType.Int64);
+                parameters.Add("@InstrumentId", instrumentId, DbType.Int64);
 
                 var cmd = new CommandDefinition(sql, parameters, cancellationToken: ct);
                 return await _connection.QueryFirstOrDefaultAsync<MarketCandle>(cmd);
@@ -87,7 +87,7 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
             catch (Exception ex)
             {
 
-                _logger.LogError(ex, "Error getting Market Candels by Id={Id}", id);
+                _logger.LogError(ex, "Error getting Market Candels by Id={Id}", instrumentId);
                 return null;
             }
         }

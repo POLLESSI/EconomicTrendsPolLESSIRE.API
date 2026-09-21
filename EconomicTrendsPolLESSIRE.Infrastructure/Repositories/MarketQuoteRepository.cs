@@ -42,7 +42,7 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
             }
         }
 
-        public async Task<bool> DeleteMarketQuoteAsync(int id)
+        public async Task<bool> DeleteMarketQuoteAsync(long id)
         {
             const string sql = @"DELETE FROM MarketQuote WHERE Id = @Id";
 
@@ -74,7 +74,7 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
             return _connection.QueryAsync<MarketQuote>(new CommandDefinition(sql, new { Limit = limit }, cancellationToken: ct));
         }
 
-        public async Task<MarketQuote?> GetMarketQuoteByIdAsync(int id)
+        public async Task<MarketQuote?> GetMarketQuoteByIdAsync(long id, CancellationToken ct = default)
         {
             const string sql = @"
                             SELECT TOP(1) [Id], [InstrumentId], [ProviderId], [TimestampUtc], [ReceivedAtUtc], [BidPrice], [BidSize], [AskPrice], [AskSize], [Active]

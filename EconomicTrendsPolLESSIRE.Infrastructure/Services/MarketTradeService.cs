@@ -1,5 +1,6 @@
 ﻿using EconomicTrendsPolLESSIRE.Application.Common;
 using EconomicTrendsPolLESSIRE.Application.Interfaces;
+using EconomicTrendsPolLESSIRE.Application.Extensions;
 using EconomicTrendsPolLESSIRE.Contracts.DTOs;
 using EconomicTrendsPolLESSIRE.Contracts.Hubs;
 using EconomicTrendsPolLESSIRE.Domain.Entities;
@@ -29,7 +30,7 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
             _logger = logger;
         }
 
-        public async Task<bool> DeleteMarketTradeAsync(int id, CancellationToken ct = default)
+        public async Task<bool> DeleteMarketTradeAsync(long id, CancellationToken ct = default)
         {
             var ok = await _marketTradeRepository.DeleteMarketTradeAsync(id);
 
@@ -46,7 +47,7 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
             return await _marketTradeRepository.GetAllMarketTradeAsync(limit, ct);
         }
 
-        public async Task<MarketTradeDTO?> GetByIdAsync(int id)
+        public async Task<MarketTradeDTO?> GetByIdAsync(long id)
         {
             if (id <= 0)
             {
@@ -63,7 +64,7 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
             return marketTradeEntity.MapToMarketTradeDTO();
         }
 
-        public async Task<MarketTrade?> GetMarketTradeByIdAsync(int id, CancellationToken ct = default)
+        public async Task<MarketTrade?> GetMarketTradeByIdAsync(long id, CancellationToken ct = default)
         {
             if (id <= 0)
             {

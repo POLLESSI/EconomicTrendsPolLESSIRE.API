@@ -28,13 +28,13 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
             _logger = logger;
         }
 
-        public async Task<bool> DeleteMarketCandleAsync(int id, CancellationToken ct = default)
+        public async Task<bool> DeleteMarketCandleAsync(long instrumentId, CancellationToken ct = default)
         {
-            var ok = await _marketCandleRepository.DeleteMarketCandleAsync(id);
+            var ok = await _marketCandleRepository.DeleteMarketCandleAsync(instrumentId);
 
             if (ok)
             {
-                await _marketDataHub.Clients.All.SendAsync(MarketHubMethods.ToClient.MarketCandleArchived, id, ct);
+                await _marketDataHub.Clients.All.SendAsync(MarketHubMethods.ToClient.MarketCandleArchived, instrumentId, ct);
             }
 
             return ok;
@@ -45,14 +45,14 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
             return await _marketCandleRepository.GetAllMarketCandleAsync(limit, ct);
         }
 
-        public async Task<MarketCandleDTO?> GetByIdAsync(int id)
+        public async Task<MarketCandleDTO?> GetByIdAsync(long instrumentId)
         {
-            if (id <= 0)
+            if (instrumentId <= 0)
             {
-                throw new ArgumentException("The instrument ID must be greater than zero.", nameof(id));
+                throw new ArgumentException("The instrument ID must be greater than zero.", nameof(instrumentId));
             }
 
-            var marketCandleEntity = await _marketCandleRepository.GetMarketCandleByIdAsync(id);
+            var marketCandleEntity = await _marketCandleRepository.GetMarketCandleByIdAsync(instrumentId);
 
             if (marketCandleEntity == null || !marketCandleEntity.Active)
             {
@@ -62,14 +62,14 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
             return marketCandleEntity.MapToMarketCandleDTO();
         }
 
-        public async Task<MarketCandle?> GetMarketCandleByIdAsync(int id, CancellationToken ct = default)
+        public async Task<MarketCandle?> GetMarketCandleByIdAsync(long instrumentId, CancellationToken ct = default)
         {
-            if (id <= 0)
+            if (instrumentId <= 0)
             {
-                throw new ArgumentException("The instrument ID must be greater than zero.", nameof(id));
+                throw new ArgumentException("The instrument ID must be greater than zero.", nameof(instrumentId));
             }
 
-            var marketCandleEntity = await _marketCandleRepository.GetMarketCandleByIdAsync(id, ct);
+            var marketCandleEntity = await _marketCandleRepository.GetMarketCandleByIdAsync(instrumentId, ct);
 
             if (marketCandleEntity == null || !marketCandleEntity.Active)
             {

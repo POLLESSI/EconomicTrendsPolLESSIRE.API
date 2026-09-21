@@ -1,5 +1,6 @@
 ﻿using EconomicTrendsPolLESSIRE.Application.Common;
 using EconomicTrendsPolLESSIRE.Application.Interfaces;
+using EconomicTrendsPolLESSIRE.Application.Extensions;
 using EconomicTrendsPolLESSIRE.Contracts.DTOs;
 using EconomicTrendsPolLESSIRE.Contracts.Hubs;
 using EconomicTrendsPolLESSIRE.Domain.Entities;

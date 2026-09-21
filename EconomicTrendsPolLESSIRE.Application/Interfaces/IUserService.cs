@@ -6,7 +6,7 @@ namespace EconomicTrendsPolLESSIRE.Application.Interfaces
 {
     public interface IUserService
     {
-#nullable disable
+    #nullable disable
         Task<Users> AuthenticateAsync(string email, string password);
         Task<Users> GetUserByEmailAsync(string email);
         Task<Users> GetUserByIdAsync(int id);

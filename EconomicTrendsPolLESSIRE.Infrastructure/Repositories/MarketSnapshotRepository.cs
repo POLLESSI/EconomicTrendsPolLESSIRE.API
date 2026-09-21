@@ -44,7 +44,7 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
             }
         }
 
-        public async Task<bool> DeleteMarketSnapshotAsync(int id)
+        public async Task<bool> DeleteMarketSnapshotAsync(long instrumentId)
         {
             const string sql = @"
                             DELETE FROM MarketSnapshot WHERE InstrumentId = @InstrumentId
@@ -53,7 +53,7 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
             try
             {
                 DynamicParameters parameters = new DynamicParameters();
-                parameters.Add("@InstrumentId", id, DbType.Int64);
+                parameters.Add("@InstrumentId", instrumentId, DbType.Int64);
 
                 var affectedRows = await _connection.ExecuteAsync(sql, parameters);
                 return affectedRows > 0;
@@ -86,7 +86,7 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
             }
         }
 
-        public async Task<MarketSnapshot?> GetMarketSnapshotByIdAsync(int id)
+        public async Task<MarketSnapshot?> GetMarketSnapshotByIdAsync(long instrumentId, CancellationToken ct = default)
         {
             const string sql = @"
                             SELECT TOP(1) [InstrumentId], [LastPrice], [BidPrice], [AskPrice], [OpenPrice], [HighPrice], [LowPrice], [PreviousClose], [Volume], [LastProviderId], [MarketTimestampUtc], [ReceivedAtUtc], [Active]
@@ -99,7 +99,7 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
             {
                 var parameters = new DynamicParameters();
 
-                parameters.Add("@InstrumentId", id, DbType.Int64);
+                parameters.Add("@InstrumentId", instrumentId, DbType.Int64);
 
                 var cmd = new CommandDefinition(sql, parameters);
 
@@ -107,7 +107,7 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting market snapshot by InstrumentId={InstrumentId}", id);
+                _logger.LogError(ex, "Error getting market snapshot by InstrumentId={InstrumentId}", instrumentId);
                 return null;
             }
         }

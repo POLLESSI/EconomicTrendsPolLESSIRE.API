@@ -1,21 +1,19 @@
-﻿using EconomicTrendsPolLESSIRE.Application.Common;
+﻿using EconomicTrendsPolLESSIRE.Application.Extensions;
 using EconomicTrendsPolLESSIRE.Application.Interfaces;
 using EconomicTrendsPolLESSIRE.Contracts.DTOs;
 using EconomicTrendsPolLESSIRE.Contracts.Hubs;
 using EconomicTrendsPolLESSIRE.Domain.Entities;
 using EconomicTrendsPolLESSIRE.Domain.Interfaces;
 using EconomicTrendsPolLESSIRE.Hubs.Hubs;
-using EconomicTrendsPolLESSIRE.Infrastructure.Repositories;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
-using System.ComponentModel.DataAnnotations;
-using System.Diagnostics.Metrics;
 
 namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
 {
     public class ProviderInstrumentService : IProviderInstrumentService
     {
     #nullable disable
+
         private readonly IProviderInstrumentRepository _providerInstrumentRepository;
         private readonly HttpClient _http;
         private readonly IHubContext<MarketDataHub> _marketDataHub;
@@ -29,55 +27,54 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
             _logger = logger;
         }
 
-        public async Task<bool> DeleteProviderInstrumentAsync(int id, CancellationToken ct = default)
+        public async Task<bool> DeleteProviderInstrumentAsync(int providerId, long instrumentId, CancellationToken ct = default)
         {
-            var ok = await _providerInstrumentRepository.DeleteProviderInstrumentAsync(id);
+            ValidateKey(providerId, instrumentId);
+
+            var ok = await _providerInstrumentRepository.DeleteProviderInstrumentAsync(providerId, instrumentId);
 
             if (ok)
             {
-                await _marketDataHub.Clients.All.SendAsync(MarketHubMethods.ToClient.ProviderInstrumentArchived, id, ct);
+                await _marketDataHub.Clients.All.SendAsync(MarketHubMethods.ToClient.ProviderInstrumentArchived, new { ProviderId = providerId, InstrumentId = instrumentId }, ct);
             }
 
             return ok;
         }
 
-        public async Task<IEnumerable<ProviderInstrument>> GetAllAsync(int limit = 500, CancellationToken ct = default)
+        public async Task<IEnumerable<ProviderInstrument>> GetAllAsync(
+            int limit = 500,
+            CancellationToken ct = default)
         {
-            return await _providerInstrumentRepository.GetAllProviderInstrumentAsync(limit, ct);
+            return await _providerInstrumentRepository
+                .GetAllProviderInstrumentAsync(limit, ct);
         }
 
-        public async Task<ProviderInstrumentDTO?> GetByIdAsync(int id)
+        public async Task<ProviderInstrumentDTO?> GetByIdAsync(int providerId, long instrumentId, CancellationToken ct = default)
         {
-            if (id <= 0)
-            {
-                throw new ArgumentException("The provider instrument ID must be greater than zero.", nameof(id));
-            }
+            ValidateKey(providerId, instrumentId);
 
-            var providerInstrumentEntity = await _providerInstrumentRepository.GetProviderInstrumentByIdAsync(id);
+            var entity = await _providerInstrumentRepository.GetProviderInstrumentByIdAsync(providerId, instrumentId, ct);
 
-            if (providerInstrumentEntity == null || !providerInstrumentEntity.Active)
+            if (entity == null || !entity.Active)
             {
                 return null;
             }
 
-            return providerInstrumentEntity.MapToProviderInstrumentDTO();
+            return entity.MapToProviderInstrumentDTO();
         }
 
-        public async Task<ProviderInstrument?> GetProviderInstrumentByIdAsync(int id, CancellationToken ct = default)
+        public async Task<ProviderInstrument?>GetProviderInstrumentByIdAsync(int providerId, long instrumentId, CancellationToken ct = default)
         {
-            if (id <= 0)
-            {
-                throw new ArgumentException("The provider instrument ID must be greater than zero.", nameof(id));
-            }
+            ValidateKey(providerId, instrumentId);
 
-            var providerInstrumentEntity = await _providerInstrumentRepository.GetProviderInstrumentByIdAsync(id, ct);
+            var entity = await _providerInstrumentRepository.GetProviderInstrumentByIdAsync(providerId, instrumentId, ct);
 
-            if (providerInstrumentEntity == null || !providerInstrumentEntity.Active)
+            if (entity == null || !entity.Active)
             {
                 return null;
             }
 
-            return providerInstrumentEntity;
+            return entity;
         }
 
         public Task<ProviderInstrumentDTO?> SaveAsync(ProviderInstrumentDTO dto)
@@ -85,9 +82,26 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
             throw new NotImplementedException();
         }
 
-        public async Task<ProviderInstrument?> SaveProviderInstrumentAsync(ProviderInstrument providerinstrum, CancellationToken ct = default)
+        public async Task<ProviderInstrument?> SaveProviderInstrumentAsync(ProviderInstrument providerInstrument, CancellationToken ct = default)
         {
-            return await _providerInstrumentRepository.SaveProviderInstrumentAsync(providerinstrum);
+            ArgumentNullException.ThrowIfNull(providerInstrument);
+
+            ValidateKey(providerInstrument.ProviderId, providerInstrument.InstrumentId);
+
+            return await _providerInstrumentRepository.SaveProviderInstrumentAsync(providerInstrument);
+        }
+
+        private static void ValidateKey(int providerId, long instrumentId)
+        {
+            if (providerId <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(providerId), "The provider ID must be greater than zero.");
+            }
+
+            if (instrumentId <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(instrumentId), "The instrument ID must be greater than zero.");
+            }
         }
     }
 }

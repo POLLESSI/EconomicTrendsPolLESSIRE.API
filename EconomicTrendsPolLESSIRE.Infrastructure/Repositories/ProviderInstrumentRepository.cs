@@ -44,23 +44,26 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
             }
         }
 
-        public async Task<bool> DeleteProviderInstrumentAsync(int id)
+        public async Task<bool> DeleteProviderInstrumentAsync(int providerId, long instrumentId)
         {
             const string sql = @"
-                            DELETE FROM Instrument WHERE ProviderId = @ProviderId
+                            DELETE FROM dbo.ProviderInstrument
+                            WHERE ProviderId = @ProviderId
+                              AND InstrumentId = @InstrumentId;
                             ";
 
             try
             {
                 DynamicParameters parameters = new DynamicParameters();
-                parameters.Add("@ProviderId", id, DbType.Int64);
+                parameters.Add("@ProviderId", providerId, DbType.Int16);
+                parameters.Add("@InstrumentId", instrumentId, DbType.Int64);
 
                 var affectedRows = await _connection.ExecuteAsync(sql, parameters);
                 return affectedRows > 0;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error archiving past provider instruments");
+                _logger.LogError(ex, "Error archiving ProviderInstrument {ProviderId}/{InstrumentId}", providerId, instrumentId);
                 return false;
             }
         }
@@ -71,12 +74,13 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
                             SELECT TOP(@Limit) [ProviderId], [InstrumentId], [ProviderSymbol], [Realtime], [DelaySeconds], [Active]
                             FROM [ProviderInstrument]
                             WHERE [Active] = 1
-                            ORDER BY [CreatedAtUtc] ASC; 
+                            ORDER BY ProviderId, InstrumentId; 
                             ";
 
             try
             {
-                return _connection.QueryAsync<ProviderInstrument>(new CommandDefinition(sql, new { Limit = limit }, cancellationToken: ct));
+                var cmd = new CommandDefinition(sql, new { Limit = limit }, cancellationToken: ct);
+                return _connection.QueryAsync<ProviderInstrument>(cmd);
             }
             catch (Exception ex)
             {
@@ -85,12 +89,13 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
             }
         }
 
-        public async Task<ProviderInstrument?> GetProviderInstrumentByIdAsync(int id)
+        public async Task<ProviderInstrument?> GetProviderInstrumentByIdAsync(int providerId, long instrumentId, CancellationToken ct = default)
         {
             const string sql = @"
                             SELECT TOP(1) [ProviderId], [InstrumentId], [ProviderSymbol], [Realtime], [DelaySeconds], [Active]
                             FROM dbo.ProviderInstrument
                             WHERE ProviderId = @ProviderId
+                              AND InstrumentId = @InstrumentId
                               AND Active = 1;
                             ";
 
@@ -98,15 +103,16 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
             {
                 var parameters = new DynamicParameters();
 
-                parameters.Add("@ProviderId", id, DbType.Int64);
+                parameters.Add("@ProviderId", providerId, DbType.Int16);
+                parameters.Add("@InstrumentId", instrumentId, DbType.Int64);
 
-                var cmd = new CommandDefinition(sql, parameters);
+                var cmd = new CommandDefinition(sql, parameters, cancellationToken: ct);
 
                 return await _connection.QueryFirstOrDefaultAsync<ProviderInstrument>(cmd);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting Provider Instrument by Id={ProviderId}", id);
+                _logger.LogError(ex, "Error getting ProviderInstrument {ProviderId}/{InstrumentId}", providerId, instrumentId);
                 return null;
             }
         }
@@ -114,33 +120,34 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
         public async Task<ProviderInstrument?> SaveProviderInstrumentAsync(ProviderInstrument providinstrument)
         {
             const string sql = @"
-                            INSERT INTO [ProviderInstrument] ([InstrumentId], [ProviderSymbol], [Realtime], [DelaySeconds], [Active])
-                            VALUES (@InstrumentId, @ProviderSymbol, @Realtime, @DelaySeconds, 1);
-                            SELECT CAST(SCOPE_IDENTITY() as BIGINT);"";
+                            INSERT INTO [ProviderInstrument] ([ProviderId], [InstrumentId], [ProviderSymbol], [Realtime], [DelaySeconds], [Active])
+                            VALUES (@ProviderId, @InstrumentId, @ProviderSymbol, @Realtime, @DelaySeconds, 1);
                             ";
 
             try
             {
                 DynamicParameters parameters = new DynamicParameters();
-                parameters.Add("@Symbol", providinstrument.InstrumentId, DbType.UInt64);
-                parameters.Add("@Name", providinstrument.ProviderSymbol, DbType.String);
-                parameters.Add("@AssetClass", providinstrument.Realtime, DbType.Boolean);
-                parameters.Add("@ExchangeCode", providinstrument.DelaySeconds, DbType.Int16);
+                parameters.Add("@ProviderId", providinstrument.ProviderId, DbType.Int16);
+                parameters.Add("@InstrumentId", providinstrument.InstrumentId, DbType.UInt64);
+                parameters.Add("@ProviderSymbol", providinstrument.ProviderSymbol, DbType.String);
+                parameters.Add("@Realtime", providinstrument.Realtime, DbType.Boolean);
+                parameters.Add("@DelaySeconds", providinstrument.DelaySeconds, DbType.Int16);
 
-                var newId = await _connection.ExecuteScalarAsync<int>(sql, parameters);
-                providinstrument.ProviderId = newId;
+                var affected = await _connection.ExecuteAsync(sql, parameters);
+                if (affected != 1) { return null; }
+
                 providinstrument.Active = true;
                 return providinstrument;
             }
             catch (SqlException sqlEx) when (sqlEx.Number == 2627 || sqlEx.Number == 2601)
             {
-                _logger.LogWarning(sqlEx, "Duplicate active provider instrument {ProviderSymbol} on exchange {Realtime}", providinstrument.ProviderSymbol, providinstrument.Realtime);
+                _logger.LogWarning(sqlEx, "Duplicate active ProviderInstrument {ProviderId}/{InstrumentId} ({ProviderSymbol})", providinstrument.ProviderId, providinstrument.InstrumentId, providinstrument.ProviderSymbol);
 
                 return null;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error saving Provider Instrument");
+                _logger.LogError(ex, "Error saving ProviderInstrument {ProviderId}/{InstrumentId}", providinstrument.ProviderId, providinstrument.InstrumentId);
                 return null;
             }
         }

@@ -44,7 +44,7 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
             }
         }
 
-        public async Task<bool> DeleteMarketTradeAsync(int id)
+        public async Task<bool> DeleteMarketTradeAsync(long id)
         {
             const string sql = @"
                             DELETE FROM MarketTrade WHERE Id = @Id
@@ -85,7 +85,7 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
             }
         }
 
-        public async Task<MarketTrade?> GetMarketTradeByIdAsync(int id)
+        public async Task<MarketTrade?> GetMarketTradeByIdAsync(long id, CancellationToken ct = default)
         {
             const string sql = @"
                             SELECT TOP(1) [Id], [InstrumentId], [ProviderId], [TimestampUtc], [ReceivedAtUtc], [Price], [Quantity], [SequenceNumber], [Active]

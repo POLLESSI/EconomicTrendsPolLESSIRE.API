@@ -7,8 +7,8 @@ namespace EconomicTrendsPolLESSIRE.Domain.Interfaces
     {
         Task<MarketCandle?> SaveMarketCandleAsync(MarketCandle marketCdl);
         Task<IEnumerable<MarketCandle>> GetAllMarketCandleAsync(int limit = 200, CancellationToken ct = default);
-        Task<MarketCandle?> GetMarketCandleByIdAsync(int id, CancellationToken ct = default);
-        Task<bool> DeleteMarketCandleAsync(int id);
+        Task<MarketCandle?> GetMarketCandleByIdAsync(long instrumentId, CancellationToken ct = default);
+        Task<bool> DeleteMarketCandleAsync(long instrumentId);
         Task<int> ArchivePastMarketCandlesAsync(CancellationToken ct = default);
     }
 }

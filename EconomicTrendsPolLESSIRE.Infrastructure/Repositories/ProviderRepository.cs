@@ -85,7 +85,7 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
             }
         }
 
-        public async Task<Provider?> GetProviderByIdAsync(int id)
+        public async Task<Provider?> GetProviderByIdAsync(int id, CancellationToken ct = default)
         {
             const string sql = @"
                             SELECT TOP(1) [Id], [Code], [Name], [CreatedAtUtc], [Active]

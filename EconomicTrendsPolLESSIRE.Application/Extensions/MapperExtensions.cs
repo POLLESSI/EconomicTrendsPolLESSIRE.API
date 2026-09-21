@@ -79,7 +79,7 @@ namespace EconomicTrendsPolLESSIRE.Application.Extensions
 
             return new MarketCandleDTO
             {
-                InstrumentId = (int)entity.InstrumentId,
+                InstrumentId = entity.InstrumentId,
                 IntervalCode = entity.IntervalCode,
                 OpenTimeUtc = entity.OpenTimeUtc,
                 OpenPrice = entity.OpenPrice,
@@ -116,7 +116,7 @@ namespace EconomicTrendsPolLESSIRE.Application.Extensions
             return new MarketQuoteDTO
             {
                 Id = entity.Id,
-                InstrumentId = (int)entity.InstrumentId,
+                InstrumentId = entity.InstrumentId,
                 ProviderId = entity.ProviderId,
                 TimestampUtc = entity.TimestampUtc,
                 ReceivedAtUtc = entity.ReceivedAtUtc,
@@ -152,7 +152,7 @@ namespace EconomicTrendsPolLESSIRE.Application.Extensions
 
             return new MarketSnapshotDTO
             {
-                InstrumentId = (int)entity.InstrumentId,
+                InstrumentId = entity.InstrumentId,
                 LastPrice = entity.LastPrice,
                 BidPrice = entity.BidPrice,
                 AskPrice = entity.AskPrice,
@@ -189,7 +189,7 @@ namespace EconomicTrendsPolLESSIRE.Application.Extensions
             return new MarketTradeDTO
             {
                 Id = entity.Id,
-                InstrumentId = (int)entity.InstrumentId,
+                InstrumentId = entity.InstrumentId,
                 ProviderId = entity.ProviderId,
                 TimestampUtc = entity.TimestampUtc,
                 ReceivedAtUtc = entity.ReceivedAtUtc,
@@ -326,7 +326,7 @@ namespace EconomicTrendsPolLESSIRE.Application.Extensions
             return new ProviderInstrumentDTO
             {
                 ProviderId = entity.ProviderId,
-                InstrumentId = (int)entity.InstrumentId,
+                InstrumentId = entity.InstrumentId,
                 ProviderSymbol = entity.ProviderSymbol,
                 Realtime = entity.Realtime,
                 DelaySeconds = entity.DelaySeconds
@@ -354,7 +354,7 @@ namespace EconomicTrendsPolLESSIRE.Application.Extensions
 
             return new TechnicalIndicatorDTO
             {
-                InstrumentId = (int)entity.InstrumentId,
+                InstrumentId = entity.InstrumentId,
                 IntervalCode = entity.IntervalCode,
                 TimestampUtc = entity.TimestampUtc,
                 IndicatorType = entity.IndicatorType,
@@ -441,29 +441,39 @@ namespace EconomicTrendsPolLESSIRE.Application.Extensions
 
         public static Users MapToUsers(this UserDTO dto)
         {
-            return new Users
-            {
-                Id = dto.Id,
-                Email = dto.Email,
-                PasswordHashV2 = dto.PasswordHachV2,
-                SecurityStamp = dto.SecurityStamp,
-                Role = dto.Role,
-                Status = dto.Status
-            };
+            if (dto is null)
+                return null!;
+
+            var user = new Users(
+                dto.Id,
+                dto.Email,
+                dto.PasswordHashV2,
+                dto.SecurityStamp,
+                dto.Role,
+                dto.Status);
+
+            if (dto.Active)
+                user.Activate();
+            else
+                user.Deactivate();
+
+            return user;
         }
 
         public static UserDTO MapToUserDTO(this Users entity)
         {
-            if (entity is null) return null!;
+            if (entity is null)
+                return null!;
 
             return new UserDTO
             {
                 Id = entity.Id,
                 Email = entity.Email,
-                PasswordHachV2 = entity.PasswordHashV2,
+                PasswordHashV2 = entity.PasswordHashV2,
                 SecurityStamp = entity.SecurityStamp,
                 Role = entity.Role,
-                Status = entity.Status
+                Status = entity.Status,
+                Active = entity.Active
             };
         }
 

@@ -7,8 +7,8 @@ namespace EconomicTrendsPolLESSIRE.Domain.Interfaces
     {
         Task<TechnicalIndicator?> SaveTechnicalIndicatorAsync(TechnicalIndicator technicalindic);
         Task<IEnumerable<TechnicalIndicator>> GetAllTechnicalIndicatorAsync(int limit = 200, CancellationToken ct = default);
-        Task<TechnicalIndicator?> GetTechnicalIndicatorByIdAsync(int id);
-        Task<bool> DeleteTechnicalIndicatorAsync(int id);
+        Task<TechnicalIndicator?> GetTechnicalIndicatorByIdAsync(long instrumentId, int intervalCode, int indicatorType, DateTime timestampUtc, CancellationToken ct = default);
+        Task<bool> DeleteTechnicalIndicatorAsync(long instrumentId, int intervalCode, int indicatorType, DateTime timestampUtc, CancellationToken ct = default);
         Task<int> ArchivePastTechnicalIndicatorsAsync(CancellationToken ct = default);
     }
 }
