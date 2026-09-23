@@ -511,6 +511,120 @@ namespace EconomicTrendsPolLESSIRE.Application.Extensions
                 UserAgent = entity.UserAgent
             };
         }
+
+        // GPTInteraction → DTO
+        public static MistralInteractionDTO MapToMistralInteractionDTO(this MistralInteraction entity)
+        {
+            if (entity is null)
+                return null!;
+
+            return new MistralInteractionDTO
+            {
+                Id = entity.Id,
+                Prompt = entity.Prompt ?? string.Empty,
+                Response = entity.Response ?? string.Empty,
+                PromptHash = entity.PromptHash ?? string.Empty,
+                CreatedAt = entity.CreatedAt,
+                Active = entity.Active,
+
+                /*
+                 * Contextual relationships are not
+                 * still persisted in GptInteractions.
+                 */
+                PlaceId = 0,
+                /*
+                 * These two values are now stored
+                 * in dbo.GptInteractions.
+                 */
+                Latitude = entity.Latitude,
+                Longitude = entity.Longitude,
+                SourceType = entity.SourceType,
+                
+            };
+        }
+
+        public static MistralInteraction MapToMistralInteraction(this MistralInteractionDTO dto)
+        {
+            if (dto is null)
+                return null!;
+
+            return new MistralInteraction
+            {
+                Id = dto.Id,
+                Prompt = dto.Prompt,
+                Response = dto.Response,
+                PromptHash = string.IsNullOrWhiteSpace(dto.PromptHash) ? null! : dto.PromptHash,
+                CreatedAt = dto.CreatedAt == default ? DateTime.UtcNow : dto.CreatedAt,
+                Active = dto.Active,
+                Latitude = dto.Latitude,
+                Longitude = dto.Longitude,
+                SourceType = dto.SourceType
+            };
+        }
+
+
+        // DTO -> Entity partial update)
+        public static MistralInteraction UpdateFrom(this MistralInteraction entity, MistralInteractionDTO dto)
+        {
+            if (entity is null || dto is null)
+                return entity!;
+
+            entity.Prompt = dto.Prompt;
+            entity.Response = dto.Response;
+            if (!string.IsNullOrWhiteSpace(dto.PromptHash))
+            {
+                entity.PromptHash = dto.PromptHash;
+            }
+            entity.Active = dto.Active;
+            entity.Latitude = dto.Latitude;
+            entity.Longitude = dto.Longitude;
+            entity.SourceType = dto.SourceType;
+
+            return entity;
+        }
+        // Place → DTOSugges
+        public static PlaceDTO MapToPlaceDTO(this Place entity)
+        {
+            return new PlaceDTO
+            {
+                Id = entity.Id,
+                Name = entity.Name,
+                Type = entity.Type,
+                Indoor = entity.Indoor,
+                Latitude = entity.Latitude,
+                Longitude = entity.Longitude,
+                Capacity = entity.Capacity,
+                Tag = entity.Tag,
+            };
+        }
+        public static Place MapToPlace(this PlaceDTO dto)
+        {
+            return new Place
+            {
+                Id = dto.Id,
+                Name = dto.Name,
+                Type = dto.Type,
+                Indoor = dto.Indoor,
+                Latitude = dto.Latitude,
+                Longitude = dto.Longitude,
+                Capacity = dto.Capacity,
+                Tag = dto.Tag
+            };
+        }
+        public static PlaceDTO MapToPlaceWithLatitude(this PlaceDTO dto)
+        {
+            return new PlaceDTO
+            {
+                Id = dto.Id,
+                Name = dto.Name,
+                Type = dto.Type,
+                Indoor = dto.Indoor,
+                Latitude = Math.Round(dto.Latitude, 2),
+                Longitude = Math.Round(dto.Longitude, 3),
+                Capacity = dto.Capacity,
+                Tag = dto.Tag
+            };
+        }
     }
 }
 

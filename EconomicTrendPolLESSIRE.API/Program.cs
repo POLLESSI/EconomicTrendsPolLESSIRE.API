@@ -37,6 +37,7 @@ builder.Services.AddSingleton<IMarketRealtimePublisher, SignalRMarketRealtimePub
 
 //Services
 builder.Services.AddScoped<IInstrumentService, InstrumentService>();
+builder.Services.AddScoped<ILocalAiContextService, LocalAiContextService>();
 builder.Services.AddScoped<IMarketCandleService, MarketCandleService>();
 builder.Services.AddScoped<IMarketQuoteService, MarketQuoteService>();
 builder.Services.AddScoped<IMarketSnapshotService, MarketSnapshotService>();
@@ -55,6 +56,7 @@ builder.Services.AddScoped<IUserSessionsService, UserSessionsService>();
 
 //Repositories
 builder.Services.AddScoped<IInstrumentRepository, InstrumentRepository>();
+builder.Services.AddScoped<ILocalAiDataRepository, LocalAiDataRepository>();
 builder.Services.AddScoped<IMarketCandleRepository, MarketCandleRepository>();
 builder.Services.AddScoped<IMarketQuoteRepository, MarketQuoteRepository>();
 builder.Services.AddScoped<IMarketSnapshotRepository, MarketSnapshotRepository>();

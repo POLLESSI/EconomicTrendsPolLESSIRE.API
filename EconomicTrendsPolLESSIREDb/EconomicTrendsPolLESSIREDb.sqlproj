@@ -79,6 +79,8 @@
     <Build Include="Tables\UserMessage.sql" />
     <Build Include="Tables\MistralInteractions.sql" />
     <Build Include="Tables\MistralJob.sql" />
+    <Build Include="Tables\Suggestion.sql" />
+    <Build Include="Tables\Place.sql" />
   </ItemGroup>
   <ItemGroup>
     <None Include="EconomicTrendsPolLESSIREDb.publish.xml" />

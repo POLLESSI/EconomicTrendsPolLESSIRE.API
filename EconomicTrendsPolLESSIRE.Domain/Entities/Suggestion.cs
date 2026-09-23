@@ -1,0 +1,143 @@
+﻿namespace EconomicTrendsPolLESSIRE.Domain.Entities
+{
+    public class Suggestion
+    {
+#nullable disable
+        public int Id { get; set; }
+        public int User_Id { get; set; }
+        public DateTime DateSuggestion { get; set; }
+        public string? OriginalPlace { get; set; }
+        public string? SuggestedAlternatives { get; set; }
+        public string? Reason { get; set; }
+        public bool Active { get; set; }
+        public DateTime? DateDeleted { get; set; }
+
+        // Links to external entities
+        //public int? EventId { get; set; }
+        //public int? PlaceId { get; set; }
+        //public int? ForecastId { get; set; }
+        //public int? TrafficId { get; set; }
+        public string? LocationName { get; set; }
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
+        public double? DistanceKm { get; set; }
+        public string? LocationLabel { get; set; }
+        public string? Title { get; set; }
+        public string Message { get; set; }
+        public string Context { get; set; }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Copyrigtht (c) EconomicTrendsPolLESSIRE https://github.com/POLLESSI/EconomicTrendsPolLESSIRE. All rights reserved.
