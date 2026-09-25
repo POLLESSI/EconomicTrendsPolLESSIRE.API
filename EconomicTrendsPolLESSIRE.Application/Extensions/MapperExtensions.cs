@@ -527,19 +527,11 @@ namespace EconomicTrendsPolLESSIRE.Application.Extensions
                 CreatedAt = entity.CreatedAt,
                 Active = entity.Active,
 
-                /*
-                 * Contextual relationships are not
-                 * still persisted in GptInteractions.
-                 */
-                PlaceId = 0,
-                /*
-                 * These two values are now stored
-                 * in dbo.GptInteractions.
-                 */
                 Latitude = entity.Latitude,
                 Longitude = entity.Longitude,
                 SourceType = entity.SourceType,
-                
+                ExecutionSource = entity.ExecutionSource,
+                Status = entity.Status
             };
         }
 

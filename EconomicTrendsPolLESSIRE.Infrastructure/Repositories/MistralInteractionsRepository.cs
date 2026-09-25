@@ -245,38 +245,95 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
             await SaveInteractionAsync(interaction);
         }
 
-        public async Task<MistralInteraction> CreatePendingAsync(MistralInteraction interaction, CancellationToken ct = default)
+        public async Task<MistralInteraction> CreatePendingAsync(
+    MistralInteraction interaction,
+    CancellationToken ct = default)
         {
             ArgumentNullException.ThrowIfNull(interaction);
 
             interaction.Prompt ??= string.Empty;
             interaction.Response ??= string.Empty;
+
             interaction.Active = true;
+
             interaction.CreatedAt = interaction.CreatedAt == default ? DateTime.UtcNow : interaction.CreatedAt;
 
             interaction.Model ??= "mistral";
             interaction.Temperature ??= 0.3f;
 
-            interaction.PromptHash = ComputePromptHash(
-                $"{interaction.Prompt}|{Guid.NewGuid():N}|{DateTime.UtcNow:O}");
+            interaction.ExecutionSource ??= "MistralLocal";
 
-            const string sql = """
+            interaction.Status ??= "Pending";
+
+            interaction.PromptHash = ComputePromptHash(interaction.Prompt);
+
+            const string sql = @"
                             INSERT INTO dbo.MistralInteractions
                             (
-                                Prompt, PromptHash, Response, CreatedAt, Active, Model, Temperature, TokenCount, EventId, CrowdInfoId, MarketTradeId, TrafficConditionId, WeatherForecastId, Latitude, Longitude, SourceType
+                                Prompt,
+                                PromptHash,
+                                Response,
+                                CreatedAt,
+                                Active,
+
+                                Model,
+                                Temperature,
+                                TokenCount,
+
+                                SourceType,
+                                ExecutionSource,
+                                Status,
+
+                                InstrumentId,
+                                ProviderId,
+                                MarketQuoteId,
+                                MarketTradeId,
+
+                                MarketCandleIntervalCode,
+                                MarketCandleOpenTimeUtc,
+
+                                TechnicalIndicatorIntervalCode,
+                                TechnicalIndicatorType,
+                                TechnicalIndicatorTimestampUtc,
+
+                                Latitude,
+                                Longitude
                             )
                             OUTPUT INSERTED.*
                             VALUES
                             (
-                                @Prompt, @PromptHash, @Response, SYSUTCDATETIME(), 1, @Model, @Temperature, @TokenCount, @EventId, @CrowdInfoId, @MarketTradeId, @TrafficConditionId, @WeatherForecastId, @Latitude, @Longitude, @SourceType
-                            );
-                            """;
+                                @Prompt,
+                                @PromptHash,
+                                @Response,
+                                SYSUTCDATETIME(),
+                                1,
 
-            return await _connection.QuerySingleAsync<MistralInteraction>(
-                new CommandDefinition(
-                    sql,
-                    interaction,
-                    cancellationToken: ct));
+                                @Model,
+                                @Temperature,
+                                @TokenCount,
+
+                                @SourceType,
+                                @ExecutionSource,
+                                @Status,
+
+                                @InstrumentId,
+                                @ProviderId,
+                                @MarketQuoteId,
+                                @MarketTradeId,
+
+                                @MarketCandleIntervalCode,
+                                @MarketCandleOpenTimeUtc,
+
+                                @TechnicalIndicatorIntervalCode,
+                                @TechnicalIndicatorType,
+                                @TechnicalIndicatorTimestampUtc,
+
+                                @Latitude,
+                                @Longitude
+                            );
+                            ";
+
+            return await _connection.QuerySingleAsync<MistralInteraction>(new CommandDefinition(sql, interaction, cancellationToken: ct));
         }
 
         public async Task SaveInteractionAsync(MistralInteraction interaction)
@@ -318,10 +375,16 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
         public async Task<bool> DeactivateInteractionAsync(int id)
         {
             const string sql = @"
-                            UPDATE [MistralInteractions]
-                            SET Active = 0
+                            UPDATE dbo.MistralInteractions
+                            SET
+                                Active = 0,
+                                DateDeleted =
+                                    COALESCE(
+                                        DateDeleted,
+                                        SYSUTCDATETIME())
                             WHERE Id = @Id
-                              AND Active = 1;";
+                              AND Active = 1;
+                            ";
 
             var parameters = new DynamicParameters();
             parameters.Add("@Id", id, DbType.Int32);
@@ -333,10 +396,20 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
         public async Task<int> ArchivePastMistralInteractionsAsync()
         {
             const string sql = @"
-                            UPDATE [MistralInteractions]
-                            SET Active = 0
+                            UPDATE dbo.MistralInteractions
+                            SET
+                                Active = 0,
+                                DateDeleted =
+                                    COALESCE(
+                                        DateDeleted,
+                                        SYSUTCDATETIME())
                             WHERE Active = 1
-                              AND CreatedAt < DATEADD(DAY, -1, SYSUTCDATETIME());";
+                              AND CreatedAt <
+                                  DATEADD(
+                                      DAY,
+                                      -1,
+                                      SYSUTCDATETIME());
+                            ";
 
             try
             {

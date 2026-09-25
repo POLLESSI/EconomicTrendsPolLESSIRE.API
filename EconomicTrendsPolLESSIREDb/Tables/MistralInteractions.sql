@@ -11,7 +11,7 @@
 	[Model] NVARCHAR(64) NULL, 
 	[Temperature] FLOAT NULL, 
 	[TokenCount] INT NULL, 
-
+    
 	[Active] BIT CONSTRAINT [DF_MistralInteractions_Active] DEFAULT 1,
 
 	-- =====================================================
@@ -19,6 +19,9 @@
     -- =====================================================
 
     [SourceType] NVARCHAR(32) NULL,
+    [ExecutionSource] NVARCHAR(32) NOT NULL CONSTRAINT [DF_MistralInteractions_ExecutionSource] DEFAULT ('MistralLocal'),
+
+    [Status] NVARCHAR(16) NOT NULL CONSTRAINT [DF_MistralInteractions_Status] DEFAULT ('Pending'),
 
     -- dbo.Instrument.Id = BIGINT
     [InstrumentId] BIGINT NULL,
@@ -137,7 +140,31 @@
                 'ProviderInstrument',
                 'TechnicalIndicator'
             )
-        )
+        ),
+
+    CONSTRAINT [CK_MistralInteractions_Status]
+        CHECK
+        (
+            [Status] IN
+            (
+                'Pending',
+                'Running',
+                'Completed',
+                'Failed',
+                'Cancelled',
+                'Blocked'
+            )
+        ), 
+    CONSTRAINT [CK_MistralInteractions_ExecutionSource]
+        CHECK
+        (
+            [ExecutionSource] IN
+            (
+                'MistralLocal',
+                'DomainGuard',
+                'EconomicTrendFallbackTimeout'
+            )
+        ),
 );
 
 GO

@@ -2,7 +2,7 @@
 {
     public class MistralInteraction
     {
-#nullable disable
+    #nullable disable
         // ID of the AI ​​interaction itself
         public int Id { get; set; }
         public string Prompt { get; set; }
@@ -68,6 +68,12 @@
         // ProviderInstrument
         // TechnicalIndicator
         public string? SourceType { get; set; }
+
+        public string ExecutionSource { get; set; } = "MistralLocal";
+
+        public string Status { get; set; } = "Pending";
+
+        public DateTime? DateDeleted { get; set; }
     }
 }
 

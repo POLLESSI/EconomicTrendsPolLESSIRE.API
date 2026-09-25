@@ -30,7 +30,7 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
 {
     public sealed class MistralOrchestrator : IMistralOrchestrator, IMistralQueuedRequestProcessor
     {
-        private const int MaxTourismRecommendations = 8;
+        private const int MaxEconomicTrendRecommendations = 20;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IHubContext<MistralHub, IMistralClient> _hubContext;
         private readonly IMistralRequestRegistry _mistralRequestRegistry;
@@ -49,7 +49,7 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
             _domainGuard = domainGuard ?? throw new ArgumentNullException(nameof(domainGuard));
             _backgroundQueue = backgroundQueue ?? throw new ArgumentNullException(nameof(backgroundQueue));
 
-            _logger.LogWarning("[Mistral GEO PATCH] Version 2026-07-18-v3 loaded: radius=25, maxCandidates=12");
+            _logger.LogInformation("[Mistral ECONOMIC] EconomicTrends orchestrator loaded.");
         }
         public async Task<MistralStartResponseDto> StartMistralRequestAsync(MistralPromptRequest request, CancellationToken ct = default)
         {
@@ -361,7 +361,9 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
                 CreatedAt = DateTime.UtcNow,
                 Model = "mistral",
                 Temperature = 0.3f,
-                SourceType = "MistralLocal",
+                ExecutionSource = "MistralLocal",
+                Status = "Pending",
+                SourceType = null,
                 Latitude = request.Latitude,
                 Longitude = request.Longitude
             };
@@ -400,604 +402,200 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
             var mistralRepository = scope.ServiceProvider.GetRequiredService<IMistralInteractionRepository>();
             var localAiContextService = scope.ServiceProvider.GetRequiredService<ILocalAiContextService>();
             var mistralAiService = scope.ServiceProvider.GetRequiredService<IMistralAIService>();
-            var placeRepository = scope.ServiceProvider.GetRequiredService<IPlaceRepository>();
+
+            // =========================================================
+            // DOMAIN GUARD
+            // =========================================================
 
             var inputGuard = _domainGuard.CheckInput(prompt);
 
             if (!inputGuard.Allowed)
             {
-                var blockedResponse = inputGuard.Message ?? "I cannot assist with this type of request. OutZen is limited to tourism, cultural, and local recommendations, as well as visitor safety and well-being.";
+                var blockedResponse = inputGuard.Message ?? "This request is outside the supported EconomicTrends domain.";
 
-                return await CompleteWithGuardMessageAsync(
-                    mistralRepository,
-                    interactionId,
-                    requestId,
-                    blockedResponse,
-                    pushChunksToHub,
-                    ct).ConfigureAwait(false);
+                return await CompleteWithGuardMessageAsync( mistralRepository, interactionId, requestId, blockedResponse, pushChunksToHub, ct).ConfigureAwait(false);
             }
 
-            var swContext = Stopwatch.StartNew();
-            var contextPrompt = NormalizeMultilingualPromptForContext(prompt);
+            // =========================================================
+            // LANGUAGE
+            // =========================================================
 
-            _logger.LogInformation(
-                "[Mistral MULTILINGUAL] OriginalPrompt={OriginalPrompt}; " +
-                "ContextPrompt={ContextPrompt}",
-                prompt,
-                contextPrompt);
-
-            var placeNameResolver = scope.ServiceProvider.GetRequiredService<IPlaceNameResolver>();
-            var nearMeIntent = IsNearMePrompt(contextPrompt);
-            var requestedName = nearMeIntent ? null : ExtractPlaceNameFromPrompt(contextPrompt);
-            var places = await placeRepository.GetActivePlacesAsync(ct);
             var responseLanguage = ResolveResponseLanguage(prompt, request.LanguageCode);
 
-            Place? originPlace = null;
+            /*
+             * Do not translate the economic question here.
+             *
+             * The original meaning must remain intact.
+             * We only normalize whitespace.
+             */
+            var contextPrompt = NormalizeEconomicPromptForContext(prompt);
 
-            string originResolutionSource = "None";
+            _logger.LogInformation("[Mistral ECONOMIC] " + "OriginalPrompt={OriginalPrompt}; " + "ContextPrompt={ContextPrompt}; " + "Language={Language}", prompt, contextPrompt, responseLanguage);
 
-            // A specifically requested location must be given priority
-            // over the user's GPS location.
-            //
-            // Examples:
-            // "à Charleroi"
-            // "autour de Bruxelles"
-            //
-            // However, "près de moi" must use the GPS.
-            if (!nearMeIntent)
-            {
-                originPlace = await placeNameResolver.ResolveAsync(
-                    prompt,
-                    responseLanguage,
-                    ct);
-
-                if (originPlace is not null)
-                {
-                    originResolutionSource = "IPlaceNameResolver";
-                }
-
-                if (originPlace is null)
-                {
-                    originPlace =
-                        ResolvePlaceFromPrompt(
-                            contextPrompt,
-                            places);
-
-                    if (originPlace is not null)
-                    {
-                        originResolutionSource =
-                            "ResolvePlaceFromPrompt";
-                    }
-                }
-
-                if (originPlace is null &&
-                    !string.IsNullOrWhiteSpace(requestedName))
-                {
-                    originPlace =
-                        await placeRepository.FindByNameLikeAsync(
-                            requestedName,
-                            ct);
-
-                    if (originPlace is not null)
-                    {
-                        originResolutionSource =
-                            "FindByNameLikeAsync";
-                    }
-                }
-            }
-
-            _logger.LogWarning(
-                "[Mistral GEO DIAGNOSTIC] " +
-                "NearMe={NearMe}; " +
-                "ContextPrompt={ContextPrompt}; " +
-                "RequestedName={RequestedName}; " +
-                "ResolutionSource={ResolutionSource}; " +
-                "OriginPlaceId={OriginPlaceId}; " +
-                "OriginPlace={OriginPlace}; " +
-                "OriginLat={OriginLat}; " +
-                "OriginLng={OriginLng}; " +
-                "RequestLat={RequestLat}; " +
-                "RequestLng={RequestLng}",
-                nearMeIntent,
-                contextPrompt,
-                requestedName,
-                originResolutionSource,
-                originPlace?.Id,
-                originPlace?.Name,
-                originPlace?.Latitude,
-                originPlace?.Longitude,
-                request.Latitude,
-                request.Longitude);
-            // For a "near me" search",
-            // no silent fallback to Charleroi.
-            if (nearMeIntent && !HasValidCoordinates(request.Latitude, request.Longitude))
-            {
-                const string locationRequiredMessage =
-                    "Je n’ai pas reçu votre position actuelle. " +
-                    "Autorisez la géolocalisation puis réessayez votre demande « près de moi ».";
-
-                return await CompleteWithGuardMessageAsync(
-                        mistralRepository,
-                        interactionId,
-                        requestId,
-                        locationRequiredMessage,
-                        pushChunksToHub,
-                        ct)
-                    .ConfigureAwait(false);
-            }
+            // =========================================================
+            // OPTIONAL COORDINATES
+            // =========================================================
 
             double? effectiveLatitude = null;
             double? effectiveLongitude = null;
 
-            // 1. A specifically requested location wins.
-            if (originPlace is not null)
-            {
-                effectiveLatitude = (double)originPlace.Latitude;
-
-                effectiveLongitude = (double)originPlace.Longitude;
-
-                _logger.LogInformation(
-                    "[Mistral GEO] Origin resolved from SQL. " +
-                    "Name={Name}; Lat={Lat}; Lng={Lng}",
-                    originPlace.Name,
-                    effectiveLatitude,
-                    effectiveLongitude);
-            }
-
-            // 2. Otherwise, use the client's GPS.
-            else if (HasValidCoordinates(request.Latitude, request.Longitude))
+            if (HasValidCoordinates(request.Latitude, request.Longitude))
             {
                 effectiveLatitude = request.Latitude!.Value;
-
                 effectiveLongitude = request.Longitude!.Value;
 
-                _logger.LogInformation(
-                    "[Mistral GEO] Origin resolved from client GPS. " +
-                    "Lat={Lat}; Lng={Lng}",
-                    effectiveLatitude,
-                    effectiveLongitude);
-            }
-
-            // 3. Once the origin is actually determined,
-            // save it regardless of its source.
-            if (HasValidCoordinates(effectiveLatitude, effectiveLongitude))
-            {
-                var locationUpdated = await mistralRepository.UpdateLocationAsync(
-                        interactionId,
-                        effectiveLatitude!.Value,
-                        effectiveLongitude!.Value,
-                        ct)
-                    .ConfigureAwait(false);
+                /*
+                 * Coordinates remain optional metadata.
+                 *
+                 * We no longer resolve a Place,
+                 * city or tourist origin.
+                 */
+                var locationUpdated = await mistralRepository.UpdateLocationAsync(interactionId, effectiveLatitude.Value, effectiveLongitude.Value, ct).ConfigureAwait(false);
 
                 if (!locationUpdated)
                 {
-                    throw new InvalidOperationException($"Failed to persist the geographic position " + $"for Mistral interaction {interactionId}.");
+                    _logger.LogWarning(
+                        "[Mistral ECONOMIC] " +
+                        "Unable to persist optional coordinates. " +
+                        "InteractionId={InteractionId}",
+                        interactionId);
                 }
-
-                _logger.LogInformation(
-                    "[Mistral GEO] Persisted interaction location. " +
-                    "InteractionId={InteractionId}; " +
-                    "Latitude={Latitude}; " +
-                    "Longitude={Longitude}",
-                    interactionId,
-                    effectiveLatitude.Value,
-                    effectiveLongitude.Value);
             }
 
-            _logger.LogInformation(
-                "[Mistral GEO] Final origin. " +
-                "NearMe={NearMe}; " +
-                "Source={Source}; " +
-                "Lat={Lat}; Lng={Lng}",
-                nearMeIntent,
-                originPlace is not null
-                    ? "ExplicitPlace"
-                    : HasValidCoordinates(
-                        effectiveLatitude,
-                        effectiveLongitude)
-                        ? "ClientGps"
-                        : "None",
-                effectiveLatitude,
-                effectiveLongitude);
+            // =========================================================
+            // ECONOMIC CONTEXT
+            // =========================================================
 
+            var swContext = Stopwatch.StartNew();
             var localContext = await localAiContextService.BuildContextAsync(contextPrompt, effectiveLatitude, effectiveLongitude, ct).ConfigureAwait(false);
 
             swContext.Stop();
 
             _logger.LogInformation(
-                 "[Mistral-PIPELINE] Economic context built. " +
-                 "InteractionId={InteractionId}; " +
-                 "RequestId={RequestId}; " +
-                 "ElapsedMs={ElapsedMs}; " +
-                 "Instruments={Instruments}; " +
-                 "Candles={Candles}; " +
-                 "Quotes={Quotes}; " +
-                 "Snapshots={Snapshots}; " +
-                 "Trades={Trades}; " +
-                 "Providers={Providers}; " +
-                 "Indicators={Indicators}",
-                 interactionId,
-                 requestId,
-                 swContext.ElapsedMilliseconds,
-                 localContext.Instruments.Count,
-                 localContext.MarketCandles.Count,
-                 localContext.MarketQuotes.Count,
-                 localContext.MarketSnapshots.Count,
-                 localContext.MarketTrades.Count,
-                 localContext.Providers.Count,
-                 localContext.TechnicalIndicators.Count);
-
-            string groundedPrompt = localAiContextService.BuildPrompt(localContext);
-
-            groundedPrompt += $"""
-                            ORIGINAL USER QUESTION — PRESERVE ITS LANGUAGE
-                            {prompt}
-
-                            Mandatory language rule:
-                            - Answer in the language of the original user question.
-                            - The normalized context question is used only for database search.
-                            - Do not answer in the language of the normalized context question.
-                            """;
-
-            if (!string.IsNullOrWhiteSpace(requestedName) && originPlace is null)
-            {
-                groundedPrompt += $"""
-
-                            Location requested by the user :
-                            {requestedName}
-
-                            Problem:
-                            This location was not found in the SQL Place table.
-
-                            Mandatory rules:
-                            - Do not use the client's GPS coordinates to answer a question about this location.
-                            - Do not invent any distances.
-                            - Respond that the local OutZen data is insufficient to calculate alternatives around this location.
-                            """;
-            }
-
-            _logger.LogInformation(
-                "[Mistral-PIPELINE] Grounded prompt built. InteractionId={InteractionId}, RequestId={RequestId}, GroundedPromptLength={GroundedPromptLength}, Preview={Preview}",
+                "[Mistral-PIPELINE] Economic context built. " +
+                "InteractionId={InteractionId}; " +
+                "RequestId={RequestId}; " +
+                "ElapsedMs={ElapsedMs}; " +
+                "Instruments={Instruments}; " +
+                "KeywordInstruments={KeywordInstruments}; " +
+                "Candles={Candles}; " +
+                "Quotes={Quotes}; " +
+                "Snapshots={Snapshots}; " +
+                "Trades={Trades}; " +
+                "Providers={Providers}; " +
+                "ProviderInstruments={ProviderInstruments}; " +
+                "Indicators={Indicators}; " +
+                "UserMessages={UserMessages}",
                 interactionId,
                 requestId,
-                groundedPrompt.Length,
-                groundedPrompt[..Math.Min(300, groundedPrompt.Length)]);
+                swContext.ElapsedMilliseconds,
+                localContext.Instruments.Count,
+                localContext.KeywordMatchedInstruments.Count,
+                localContext.MarketCandles.Count,
+                localContext.MarketQuotes.Count,
+                localContext.MarketSnapshots.Count,
+                localContext.MarketTrades.Count,
+                localContext.Providers.Count,
+                localContext.ProviderInstruments.Count,
+                localContext.TechnicalIndicators.Count,
+                localContext.UserMessages.Count);
+
+            // =========================================================
+            // GROUNDED PROMPT
+            // =========================================================
+
+            var groundedPrompt = localAiContextService.BuildPrompt(localContext);
+
+            groundedPrompt +=
+                $"""
+
+        ORIGINAL USER QUESTION
+        {prompt}
+
+        RESPONSE RULES:
+        - Answer in the language of the original user question.
+        - Use only the verified economic and market context supplied above.
+        - Do not invent instruments, symbols, prices, volumes, providers,
+          quotes, trades, candles or technical indicators.
+        - Distinguish observed data from interpretation.
+        - If the available data is insufficient, state this explicitly.
+        - Do not present an interpretation as a guaranteed future outcome.
+        - Prefer the most recent supplied market information when timestamps differ.
+        """;
 
             _logger.LogInformation(
-                "[Mistral LANGUAGE] Requested={RequestedLanguage}; " +
-                "Resolved={ResolvedLanguage}",
-                request.LanguageCode,
-                responseLanguage);
+                "[Mistral-PIPELINE] Grounded economic prompt built. " +
+                "InteractionId={InteractionId}; " +
+                "RequestId={RequestId}; " +
+                "Characters={Characters}",
+                interactionId,
+                requestId,
+                groundedPrompt.Length);
 
-            IReadOnlyList<VerifiedEconomicTrendCandidate> geographicVerifiedCandidates = Array.Empty<VerifiedEconomicTrendCandidate>();
-
-            if (effectiveLatitude.HasValue && effectiveLongitude.HasValue)
-            {
-                var geographicallyUniquePlaces = DeduplicatePlacesByCoordinates(places, duplicateRadiusKm: 0.1);
-
-                var candidates = geographicallyUniquePlaces
-                    .Where(p =>
-                    {
-                        if (originPlace is null)
-                            return true;
-
-                        var distanceFromOriginKm = GeoDistanceKm(
-                            (double)originPlace.Latitude,
-                            (double)originPlace.Longitude,
-                            (double)p.Latitude,
-                            (double)p.Longitude);
-
-                        return distanceFromOriginKm > 0.1;
-                    })
-
-                    // Additional protection against strictly identical names.
-                    .GroupBy(
-                        p => p.Name.Trim(),
-                        StringComparer.OrdinalIgnoreCase)
-
-                    .Select(g => g.First())
-
-                    .Select(p => new
-                    {
-                        p.Id,
-                        Name = p.Name.Trim(),
-                        p.Type,
-                        p.Tag,
-                        p.Indoor,
-                        p.Capacity,
-
-                        DistanceKm = GeoDistanceKm(
-                            effectiveLatitude!.Value,
-                            effectiveLongitude!.Value,
-                            (double)p.Latitude,
-                            (double)p.Longitude),
-
-                        InterestScore = GetTouristicInterestScore(p)
-                    })
-
-                    // "Dans les environs" must allow approximately 25 km.
-                    .Where(x => x.DistanceKm <= 25d)
-
-                    .ToList();
-
-                var nearest = candidates
-
-                    // Tangible attractions take precedence over mere locations.
-                    .OrderByDescending(x => x.InterestScore)
-                    .ThenBy(x => x.DistanceKm)
-                    .ThenBy(x => x.Name)
-                    .Take(EconomicTrendsRecommendationPolicy.MaxEconomicTrendRecommendations)
-
-                    // Final presentation by distance in the prompt.
-                    .OrderBy(x => x.DistanceKm)
-                    .ThenByDescending(x => x.InterestScore)
-                    .ThenBy(x => x.Name)
-
-                    .ToList();
-
-                geographicVerifiedCandidates =
-                    nearest
-                        .Select(x =>
-                            new VerifiedEconomicTrendCandidate(
-                                x.Name,
-                                x.DistanceKm,
-                                x.Type))
-                        .ToList();
-
-                _logger.LogInformation(
-                    "[NEARBY PIPELINE] Origin={Origin}; Latitude={Latitude}; Longitude={Longitude}; " +
-                    "RadiusKm={RadiusKm}; Loaded={LoadedCount}; AfterGeoDedup={AfterGeoDedupCount}; " +
-                    "InsideRadius={InsideRadiusCount}; SentToMistral={SentCount}",
-                    originPlace?.Name ?? requestedName ?? "<unknown>",
-                    effectiveLatitude.Value,
-                    effectiveLongitude.Value,
-                    25d,
-                    places.Count,
-                    geographicallyUniquePlaces.Count,
-                    candidates.Count,
-                    nearest.Count);
-
-                foreach (var candidate in nearest)
-                {
-                    _logger.LogInformation(
-                        "[NEARBY CANDIDATE] Id={Id}; Name={Name}; Type={Type}; " +
-                        "DistanceKm={DistanceKm}; InterestScore={InterestScore}",
-                        candidate.Id,
-                        candidate.Name,
-                        candidate.Type,
-                        candidate.DistanceKm,
-                        candidate.InterestScore);
-                }
-
-                var geoContext = JsonSerializer.Serialize(
-                    nearest.Select(x => new
-                    {
-                        x.Id,
-                        x.Name,
-                        x.Type,
-                        x.Indoor,
-                        x.Capacity,
-                        x.Tag,
-                        x.DistanceKm,
-                        x.InterestScore
-                    }),
-                    new JsonSerializerOptions
-                    {
-                        WriteIndented = false
-                    });
-
-                groundedPrompt += $"""
-
-                                GEOGRAPHIC CONTEXT OUTZEN — SOURCE SQL dbo.Place
-
-                                Location requested by the user :
-                                {originPlace?.Name ?? requestedName ?? "Location not identified"}
-
-                                Origin used to calculate distances :
-                                Latitude={effectiveLatitude.Value}
-                                Longitude={effectiveLongitude.Value}
-
-                                Nearby places calculated by OutZen :
-                                {geoContext}
-
-                                Mandatory rules :
-                                - Use only the places provided in "Nearby places calculated by OutZen".
-                                - Use only the distances provided in DistanceKm.
-                                - Never recalculate or invent a distance.
-                                - Never invent a place, attraction or event.
-                                - If no relevant place is provided, state that the available local data is insufficient.
-                                - Prioritize actual tourist attractions over generic cities or villages.
-                                - A city or village is geographical context, not an attraction by itself.
-                                - Do not repeat generic safety phrases.
-                                - Do not say "safer fallback zone" unless a confirmed critical alert exists.
-                                - Do not detail capacities unless the user requests it.
-                                - When between five and eight verified attractions are available, include all relevant candidates up to the configured maximum.
-                                - Group attractions by their nearby locality when this is useful.
-                                - Mention up to eight actual attractions when available.
-                                - If fewer than five verified attractions are available, return only the verified attractions.
-                                - Never invent an attraction merely to reach the target count.
-                                - Do not use all response slots for generic cities or villages.
-                                - Do not detail capacities unless the user requests them.
-                                - Answer concisely, but provide enough information to identify the attractions.
-                                If no actual attraction or event is available:
-                                - Do not describe a city or village as an interesting activity.
-                                - State clearly that only nearby localities were found.
-                                - Do not claim that they offer diversified activities unless such activities are present in the context.
-                                """;
-
-                groundedPrompt += """
-
-                                GREETING RULE:
-                                - If the user says "Bonsoir", begin the answer with "Bonsoir".
-                                - If the user says "Bonjour", begin the answer with "Bonjour".
-                                - Do not replace "Bonsoir" with "Bonjour".
-                                - If the user uses no greeting, do not invent one.
-                                """;
-
-                _logger.LogInformation(
-                    "[Mistral GEO] RequestedName={RequestedName}, OriginPlace={OriginPlace}, OriginLat={OriginLat}, OriginLng={OriginLng}, NearestCount={NearestCount}",
-                    requestedName,
-                    originPlace?.Name,
-                    effectiveLatitude.Value,
-                    effectiveLongitude.Value,
-                    nearest.Count);
-            }
-            else
-            {
-                groundedPrompt += """
-
-                                GEOGRAPHICAL CONTEXT OUTZEN :
-                                No reliable SQL location could be identified in the request.
-                                Do not invent distances.
-                                If you mention a distance, write "unknown distance".
-                                Response constraints :
-                                - Answer in a maximum of 6 lines.
-                                - Provide details for a maximum of 5 locations only.
-                                - Do not repeat "safer fallback zone" for each location.
-                                - Only mention security if there is a real alert in the context.
-                                - Never write "safer fallback zone" unless a confirmed critical alert is present in CriticalAlerts.
-                                """;
-
-                groundedPrompt += """
-
-                                GREETING RULE:
-                                - If the user says "Bonsoir", begin the answer with "Bonsoir".
-                                - If the user says "Bonjour", begin the answer with "Bonjour".
-                                - Do not replace "Bonsoir" with "Bonjour".
-                                - If the user uses no greeting, do not invent one.
-                                """;
-
-                _logger.LogWarning(
-                    "[Mistral GEO] No reliable origin found. RequestedName={RequestedName}, RequestLat={RequestLat}, RequestLng={RequestLng}",
-                    requestedName,
-                    request.Latitude,
-                    request.Longitude);
-            }
-
-            var requestedRecommendationCount = ExtractRequestedRecommendationCount(request.Prompt);
-
-            if (requestedRecommendationCount.HasValue)
-            {
-                groundedPrompt +=
-                    $"""
-                        FINAL TOURISM SELECTION RULES:
-                        - The user explicitly requested exactly {requestedRecommendationCount.Value} recommendation(s).
-                        - Respect that explicit quantity.
-                        - Return at most {requestedRecommendationCount.Value} verified attraction(s).
-                        - If fewer verified attractions are available, return only those available.
-                        - Never invent an attraction to reach the requested count.
-                        - Prioritize actual tourist attractions over generic towns or villages.
-                        - Include only verified attractions from the supplied OutZen context.
-                        - Do not add safety recommendations unless a confirmed alert exists.
-                        """;
-            }
-            else
-            {
-                groundedPrompt +=
-                    """
-                        FINAL TOURISM SELECTION RULES:
-                        - The user did not specify an explicit recommendation count.
-                        - For a general tourism request, mention 5 to 8 actual attractions when available.
-                        - Never exceed 8 recommendations in total.
-                        - If fewer than 5 verified attractions are available, return only those verified attractions.
-                        - Never invent a recommendation to reach 5 or 8 items.
-                        - Prioritize tourist attractions over cities and villages.
-                        - Include relevant attractions up to 25 km from the resolved origin.
-                        - Do not discuss children unless the user explicitly mentioned children or family.
-                        - Do not add safety recommendations unless a confirmed alert exists.
-                        """;
-            }
+            // =========================================================
+            // GENERATION
+            // =========================================================
 
             string finalResponse;
-
             var finalSourceType = "MistralLocal";
 
             try
             {
                 if (pushChunksToHub)
                 {
-                    if (requestedRecommendationCount.HasValue)
-                    {
-                        groundedPrompt +=
-                            $"""
-                                FINAL RESPONSE LIMITS:
-                                - Return exactly {requestedRecommendationCount.Value} recommendation(s) when that many verified candidates exist.
-                                - Never exceed {requestedRecommendationCount.Value} numbered item(s).
-                                - If fewer verified candidates exist, return fewer rather than inventing any.
-                                - Produce one numbered list only.
-                                - Prefer actual attractions over generic towns or villages.
-                                - Every numbered item must be complete.
-                                """;
-                    }
-                    else
-                    {
-                        groundedPrompt +=
-                            """
-                                FINAL RESPONSE LIMITS:
-                                - Mention at most 8 places in the entire answer.
-                                - When at least 5 verified candidates are available, provide between 5 and 8 recommendations.
-                                - If fewer candidates are available, return fewer recommendations rather than inventing any.
-                                - Produce one numbered list only.
-                                - Prefer actual attractions over generic towns or villages.
-                                - Every numbered item must be complete.
-                                """;
-                    }
-
                     var approximatePromptTokens = (int)Math.Ceiling(groundedPrompt.Length / 4d);
 
-                    _logger.LogWarning("[Mistral FINAL PROMPT SIZE] " + "InteractionId={InteractionId}; " + "Characters={Characters}; " + "ApproximateTokens={ApproximateTokens}", interactionId, groundedPrompt.Length, approximatePromptTokens);
+                    _logger.LogInformation(
+                        "[Mistral FINAL PROMPT SIZE] " +
+                        "InteractionId={InteractionId}; " +
+                        "Characters={Characters}; " +
+                        "ApproximateTokens={ApproximateTokens}",
+                        interactionId,
+                        groundedPrompt.Length,
+                        approximatePromptTokens);
 
-                    finalResponse = await mistralAiService.StreamFromPromptAsync(
-                        groundedPrompt, async chunkText =>
-                        {
-                            if (string.IsNullOrEmpty(chunkText))
-                                return;
-
-                            await _hubContext.SendChunk(
-                                new MistralResponseChunkDto
+                    finalResponse =
+                        await mistralAiService.StreamFromPromptAsync(groundedPrompt,
+                                async chunkText =>
                                 {
-                                    InteractionId = interactionId,
+                                    if (string.IsNullOrEmpty(chunkText))
+                                    {
+                                        return;
+                                    }
 
-                                    RequestId = requestId,
-
-                                    Chunk = chunkText,
-
-                                    IsFinal = false
-                                });
-                        },
-                        responseLanguage: responseLanguage, ct: ct).ConfigureAwait(false);
+                                    await _hubContext.SendChunk(
+                                        new MistralResponseChunkDto
+                                        {
+                                            InteractionId = interactionId,
+                                            RequestId = requestId,
+                                            Chunk = chunkText,
+                                            IsFinal = false
+                                        });
+                                },
+                                responseLanguage: responseLanguage, ct: ct).ConfigureAwait(false);
                 }
                 else
                 {
-                    finalResponse = await mistralAiService.GenerateFromPromptAsync(
-
-                        groundedPrompt: groundedPrompt,
-
-                        responseLanguage: responseLanguage,
-
-                        ct: ct
-                    ).ConfigureAwait(false);
+                    finalResponse = await mistralAiService.GenerateFromPromptAsync(groundedPrompt: groundedPrompt, responseLanguage: responseLanguage, ct: ct).ConfigureAwait(false);
                 }
             }
             catch (TimeoutException ex)
             {
-                finalSourceType = "TourismFallbackTimeout";
+                finalSourceType = "EconomicTrendFallbackTimeout";
 
-                var verifiedCandidates = GetVerifiedEconomicTrendCandidates(localContext, geographicVerifiedCandidates);
+                var verifiedInstruments = GetVerifiedEconomicTrendCandidates(localContext);
 
-                finalResponse = BuildVerifiedTourismResponse(verifiedCandidates, responseLanguage, requestedRecommendationCount);
+                finalResponse = BuildVerifiedEconomicTrendResponse(verifiedInstruments, responseLanguage);
 
                 _logger.LogWarning(
                     ex,
                     "[Mistral OLLAMA FALLBACK] " +
-                    "Ollama timeout. " +
+                    "Timeout. " +
                     "InteractionId={InteractionId}; " +
-                    "ResponseLanguage={ResponseLanguage}; " +
-                    "VerifiedCandidates={VerifiedCandidates}; " +
+                    "VerifiedInstruments={VerifiedInstruments}; " +
                     "FallbackLength={FallbackLength}",
                     interactionId,
-                    responseLanguage,
-                    verifiedCandidates.Count,
+                    verifiedInstruments.Count,
                     finalResponse.Length);
 
                 if (pushChunksToHub && !string.IsNullOrWhiteSpace(finalResponse))
@@ -1013,6 +611,15 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
                 }
             }
 
+            // =========================================================
+            // EMPTY RESPONSE FALLBACK
+            // =========================================================
+
+            if (string.IsNullOrWhiteSpace( finalResponse))
+            {
+                finalResponse = BuildNoEconomicDataMessage(responseLanguage);
+            }
+
             _logger.LogInformation(
                 "[Mistral-PIPELINE] Generation finished. " +
                 "InteractionId={InteractionId}; " +
@@ -1020,53 +627,49 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
                 "ResponseLength={ResponseLength}",
                 interactionId,
                 requestId,
-                finalResponse?.Length ?? 0);
+                finalResponse.Length);
 
-            if (string.IsNullOrWhiteSpace(finalResponse))
-            {
-                finalResponse = responseLanguage.StartsWith("ru", StringComparison.OrdinalIgnoreCase)
-                    ? "OutZen не получил ответа от локальной модели."
-
-                    : responseLanguage.StartsWith("fr", StringComparison.OrdinalIgnoreCase)
-
-                    ? "Aucune réponse n’a été générée par le modèle local."
-
-                    : "No response was generated by the local model.";
-            }
-
-            _logger.LogInformation("[Mistral-PIPELINE] Mistral generation finished. InteractionId={InteractionId}, RequestId={RequestId}, ResponseLength={ResponseLength}", interactionId, requestId, finalResponse?.Length ?? 0);
-
-            if (string.IsNullOrWhiteSpace(finalResponse))
-            {
-                finalResponse = responseLanguage.StartsWith("fr", StringComparison.OrdinalIgnoreCase)
-                        ? "Aucune réponse n’a été générée par Mistral." : "No response from Mistral.";
-            }
-
-            finalResponse = FilterUnsupportedTourismItems(finalResponse, localContext, responseLanguage, geographicVerifiedCandidates);
+            // =========================================================
+            // OUTPUT GUARD
+            // =========================================================
 
             var outputGuard = _domainGuard.CheckOutput(finalResponse);
 
             if (!outputGuard.Allowed)
             {
-                finalResponse = outputGuard.Message ?? "The generated response was blocked because it falls outside OutZen's authorized scope.";
+                finalResponse = outputGuard.Message ?? "The generated response was blocked because it falls outside the EconomicTrends domain.";
             }
 
-            var updated = await mistralRepository.CompleteAsync(interactionId, finalResponse, finalSourceType, ct).ConfigureAwait(false);
+            // =========================================================
+            // PERSISTENCE
+            // =========================================================
+
+            var updated =
+                await mistralRepository
+                    .CompleteAsync(
+                        interactionId,
+                        finalResponse,
+                        finalSourceType,
+                        ct)
+                    .ConfigureAwait(false);
 
             if (!updated)
             {
-                throw new InvalidOperationException($"Failed to persist final Mistral response for interaction {interactionId}.");
+                throw new InvalidOperationException(
+                    $"Failed to persist final Mistral response " +
+                    $"for interaction {interactionId}.");
             }
 
-            var suggestionRepository = scope.ServiceProvider.GetService<ISuggestionRepository>();
-
-            var persisted = await mistralRepository
-                .GetByIdAsync(interactionId)
-                .ConfigureAwait(false);
+            var persisted =
+                await mistralRepository
+                    .GetByIdAsync(interactionId)
+                    .ConfigureAwait(false);
 
             if (persisted is null)
             {
-                throw new InvalidOperationException($"Mistral interaction {interactionId} not found after update.");
+                throw new InvalidOperationException(
+                    $"Mistral interaction {interactionId} " +
+                    "not found after update.");
             }
 
             var finalDto = persisted.MapToMistralInteractionDTO();
@@ -1083,296 +686,20 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
                     });
             }
 
+            sw.Stop();
+
             _logger.LogInformation(
-                "[Mistral-PIPELINE] Final interaction persisted. InteractionId={InteractionId}, RequestId={RequestId}, TotalElapsedMs={ElapsedMs}, PersistedResponseLength={PersistedResponseLength}",
+                "[Mistral-PIPELINE] Final interaction persisted. " +
+                "InteractionId={InteractionId}; " +
+                "RequestId={RequestId}; " +
+                "TotalElapsedMs={ElapsedMs}; " +
+                "PersistedResponseLength={PersistedResponseLength}",
                 finalDto.Id,
                 requestId,
                 sw.ElapsedMilliseconds,
                 finalDto.Response?.Length ?? 0);
 
             return finalDto;
-
-        }
-
-        private static string SanitizeUnsupportedSafetyClaims(string response, bool hasConfirmedCriticalAlert)
-        {
-            if (hasConfirmedCriticalAlert ||
-                string.IsNullOrWhiteSpace(response))
-            {
-                return response;
-            }
-
-            var replacements = new Dictionary<string, string>(
-                StringComparer.OrdinalIgnoreCase)
-            {
-                // French
-                ["une destination plus sûre"] = "une destination proche",
-                ["des destinations plus sûres"] = "des destinations proches",
-                ["une option plus sûre"] = "une autre option",
-                ["des options plus sûres"] = "d’autres options",
-                ["un endroit plus sûr"] = "un endroit proche",
-                ["des endroits plus sûrs"] = "des endroits proches",
-                ["une zone plus sûre"] = "une zone proche",
-                ["une zone de repli plus sûre"] = "une localité proche",
-                ["pour votre sécurité"] = "pour votre visite",
-                ["en toute sécurité"] = "dans de bonnes conditions",
-
-                // English
-                ["a safer destination"] = "a nearby destination",
-                ["safer destinations"] = "nearby destinations",
-                ["a safer option"] = "another option",
-                ["safer options"] = "other options",
-                ["a safer place"] = "a nearby place",
-                ["safer places"] = "nearby places",
-                ["a safer fallback area"] = "a nearby location",
-                ["for your safety"] = "for your visit"
-            };
-
-            var result = response;
-
-            foreach (var replacement in replacements)
-            {
-                result = Regex.Replace(
-                    result,
-                    Regex.Escape(replacement.Key),
-                    replacement.Value,
-                    RegexOptions.IgnoreCase |
-                    RegexOptions.CultureInvariant);
-            }
-
-            return result.Trim();
-        }
-
-        private static bool AreLikelyGeographicDuplicates(Place first, Place second, double duplicateRadiusKm)
-        {
-            var distanceKm = GeoDistanceKm(
-                (double)first.Latitude,
-                (double)first.Longitude,
-                (double)second.Latitude,
-                (double)second.Longitude);
-
-            if (distanceKm > duplicateRadiusKm)
-                return false;
-
-            var firstType = first.Type?.Trim();
-            var secondType = second.Type?.Trim();
-
-            var normalizedFirstName = NormalizePlaceIdentity(first.Name);
-            var normalizedSecondName = NormalizePlaceIdentity(second.Name);
-
-            var similarName =
-                normalizedFirstName == normalizedSecondName ||
-                normalizedFirstName.Contains(
-                    normalizedSecondName,
-                    StringComparison.OrdinalIgnoreCase) ||
-                normalizedSecondName.Contains(
-                    normalizedFirstName,
-                    StringComparison.OrdinalIgnoreCase);
-
-            var bothLookLikeLocalities = IsLocalityType(firstType) && IsLocalityType(secondType);
-            var veryCloseLocalities = bothLookLikeLocalities && distanceKm <= 0.03d;
-
-            return similarName || veryCloseLocalities;
-        }
-
-        private static string NormalizePlaceIdentity(string? name)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-                return string.Empty;
-
-            var normalized = name
-                .Trim()
-                .ToLowerInvariant()
-                .Normalize(NormalizationForm.FormD);
-
-            normalized = new string(
-                normalized
-                    .Where(c =>
-                        CharUnicodeInfo.GetUnicodeCategory(c) !=
-                        UnicodeCategory.NonSpacingMark)
-                    .ToArray());
-
-            normalized = normalized
-                .Replace("-", " ")
-                .Replace("’", "'");
-
-            normalized = Regex.Replace(
-                normalized,
-                @"\bst\b",
-                "saint",
-                RegexOptions.IgnoreCase |
-                RegexOptions.CultureInvariant);
-
-            normalized = Regex.Replace(
-                normalized,
-                @"\s+",
-                " ");
-
-            return normalized.Trim();
-        }
-
-        private static bool IsLocalityType(string? type)
-        {
-            if (string.IsNullOrWhiteSpace(type))
-                return false;
-
-            return type.Contains("ville", StringComparison.OrdinalIgnoreCase) ||
-                   type.Contains("village", StringComparison.OrdinalIgnoreCase) ||
-                   type.Contains("commune", StringComparison.OrdinalIgnoreCase) ||
-                   type.Contains("localité", StringComparison.OrdinalIgnoreCase) ||
-                   type.Contains("localite", StringComparison.OrdinalIgnoreCase);
-        }
-        private static bool TryExtractCoordinatesFromPrompt(string? prompt, out double latitude, out double longitude)
-        {
-            latitude = default;
-            longitude = default;
-
-            if (string.IsNullOrWhiteSpace(prompt))
-                return false;
-
-            // Match:
-            // 50.434780,5.876832
-            // (50.434780,5.876832)
-            // 50,434780 ; 5,876832
-            var match = Regex.Match(prompt, @"(?<lat>[+-]?\d{1,2}\.\d+)\s*[,;]\s*(?<lng>[+-]?\d{1,3}\.\d+)", RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
-            if (!match.Success)
-                return false;
-
-            var latText = match.Groups["lat"].Value.Replace(',', '.');
-            var lngText = match.Groups["lng"].Value.Replace(',', '.');
-
-            if (!double.TryParse(latText, NumberStyles.Float, CultureInfo.InvariantCulture, out latitude))
-            {
-                return false;
-            }
-
-            if (!double.TryParse(lngText, NumberStyles.Float, CultureInfo.InvariantCulture, out longitude))
-            {
-                return false;
-            }
-
-            return latitude is >= -90 and <= 90 && longitude is >= -180 and <= 180;
-        }
-
-        private string FilterUnsupportedTourismItems(string response, LocalAiContextDTO context, string responseLanguage, IEnumerable<VerifiedEconomicTrendCandidate>? additionalCandidates = null)
-        {
-            if (string.IsNullOrWhiteSpace(response))
-                return response;
-
-            var verifiedCandidates = GetVerifiedEconomicTrendCandidates(context, additionalCandidates);
-
-            if (verifiedCandidates.Count == 0)
-            {
-                return BuildNoLocalResultMessage(responseLanguage);
-            }
-
-            var normalizedResponse = response.Replace("\r\n", "\n").Replace('\r', '\n');
-
-            var lines = normalizedResponse.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-            var selected = new List<VerifiedEconomicTrendCandidate>();
-
-            foreach (var line in lines)
-            {
-                var numberedItem = Regex.Match(line, @"^\s*(?:\d{1,2}[.)]|[-•])\s*(.+)$", RegexOptions.CultureInvariant);
-
-                if (!numberedItem.Success)
-                    continue;
-
-                var content = numberedItem.Groups[1].Value.Trim();
-
-                /*
-                 * Ollama adds an ellipsis when
-                 * the generation has reached num_predict.
-                 * Therefore, we do not keep a proposition
-                 * that is obviously unfinished.
-                 */
-                if (content.EndsWith("…", StringComparison.Ordinal) || content.EndsWith("...", StringComparison.Ordinal))
-                {
-                    _logger.LogWarning("[Mistral FACT FILTER REJECTED] " + "Reason=Truncated; " + "Content={Content}", content);
-
-                    continue;
-                }
-
-                var normalizedContent = NormalizeFactKey(content);
-
-                var matchedCandidate = verifiedCandidates
-                        .Select(candidate => new
-                        {
-                            Candidate = candidate,
-                            Key = NormalizeFactKey(candidate.Name)
-                        })
-                        .Where(x => !string.IsNullOrWhiteSpace(x.Key))
-                        .Where(x => normalizedContent.Equals(x.Key, StringComparison.OrdinalIgnoreCase)
-                            || normalizedContent.StartsWith(x.Key + " ", StringComparison.OrdinalIgnoreCase))
-                        .OrderByDescending(x => x.Key.Length)
-                        .Select(x => x.Candidate)
-                        .FirstOrDefault();
-
-                if (matchedCandidate is null)
-                {
-                    _logger.LogWarning(
-                        "[Mistral FACT FILTER REJECTED] " +
-                        "Reason=UnknownCandidate; " +
-                        "Content={Content}; " +
-                        "NormalizedContent={NormalizedContent}",
-                        content,
-                        normalizedContent);
-
-                    continue;
-                }
-
-                if (selected.Any(candidate =>
-                        string.Equals(
-                            NormalizeFactKey(candidate.Name),
-                            NormalizeFactKey(matchedCandidate.Name),
-                            StringComparison.OrdinalIgnoreCase)))
-                {
-                    continue;
-                }
-
-                selected.Add(matchedCandidate);
-
-                _logger.LogInformation(
-                    "[Mistral FACT FILTER ACCEPTED] " +
-                    "Name={Name}; " +
-                    "DistanceKm={DistanceKm}; " +
-                    "Type={Type}",
-                    matchedCandidate.Name,
-                    matchedCandidate.DistanceKm,
-                    matchedCandidate.Type);
-
-                if (selected.Count >= EconomicTrendsRecommendationPolicy.MaxEconomicTrendRecommendations)
-                {
-                    break;
-                }
-            }
-
-            _logger.LogWarning(
-                "[Mistral FACT FILTER] " +
-                "VerifiedCandidates={VerifiedCandidates}; " +
-                "AcceptedItems={AcceptedItems}; " +
-                "OriginalResponseLength={OriginalResponseLength}",
-                verifiedCandidates.Count,
-                selected.Count,
-                response.Length);
-
-            if (selected.Count == 0)
-            {
-                return BuildVerifiedTourismResponse(verifiedCandidates, responseLanguage);
-            }
-
-            /*
-             * Very important :
-             * we do NOT reuse the prose invented
-             * by Mistral.
-             *
-             * Mistral chooses the candidates.
-             * OutZen generates the final response from
-             * the actually verified data.
-             */
-            return BuildVerifiedTourismResponse(selected, responseLanguage);
         }
 
         private static string NormalizeFactKey(string value)
@@ -1394,31 +721,6 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
             return Regex.Replace(builder.ToString(), @"[^\p{L}\p{N}]+", " ").Trim();
         }
 
-        private static string BuildNoLocalResultMessage(string responseLanguage)
-        {
-            if (responseLanguage.StartsWith("ru", StringComparison.OrdinalIgnoreCase))
-            {
-                return """
-                    В локальных данных OutZen недостаточно
-                    проверенной информации, чтобы предложить
-                    достопримечательности для этого места.
-                    """;
-            }
-
-            if (responseLanguage.StartsWith("en", StringComparison.OrdinalIgnoreCase))
-            {
-                return """
-                    OutZen does not have enough verified local data
-                    to recommend attractions for this location.
-                    """;
-            }
-
-            return """
-                Les données locales vérifiées d’OutZen
-                sont insuffisantes pour proposer des attractions
-                autour de cette localité.
-                """;
-        }
         private async Task MarkFailedSafeAsync(int interactionId, string? errorMessage)
         {
             try
@@ -1439,8 +741,7 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
 
         private static MistralInteractionCompletedDto ToCompletedDto(MistralInteractionDTO dto)
         {
-            if (dto is null)
-                throw new ArgumentNullException(nameof(dto));
+            ArgumentNullException.ThrowIfNull(dto);
 
             return new MistralInteractionCompletedDto
             {
@@ -1451,91 +752,10 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
                 CreatedAt = dto.CreatedAt,
                 Active = dto.Active,
 
-                PlaceId = dto.PlaceId,
-                
                 Latitude = dto.Latitude,
                 Longitude = dto.Longitude,
                 SourceType = dto.SourceType
             };
-        }
-
-        private static string? ExtractPlaceNameFromPrompt(string prompt)
-        {
-            if (string.IsNullOrWhiteSpace(prompt))
-                return null;
-
-            var markers = new[]
-            {
-                "du côté de",
-                "du coté de",
-                "autour de",
-                "près de",
-                "pres de",
-                "proche de",
-                "aux alentours de",
-                "dans les environs de",
-                "à ",
-                "a "
-            };
-
-            foreach (var marker in markers)
-            {
-                var index = prompt.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
-                if (index < 0)
-                    continue;
-
-                var value = prompt[(index + marker.Length)..]
-                    .Trim(' ', '?', '!', '.', ',', ';', ':', '\r', '\n', '\t');
-
-                value = Regex.Replace(
-                        value,
-                        @"\b(cette semaine|ce week-end|ce weekend|aujourd'hui|demain|maintenant|en ce moment|pour ce week-end|pour ce weekend)\b.*$",
-                        "",
-                        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)
-                    .Trim(' ', '?', '!', '.', ',', ';', ':', '\r', '\n', '\t');
-
-                value = Regex.Replace(value, @"\s+", " ").Trim();
-
-                return string.IsNullOrWhiteSpace(value) ? null : value;
-            }
-
-            return null;
-        }
-
-        private static bool IsNearMePrompt(string? prompt)
-        {
-            if (string.IsNullOrWhiteSpace(prompt))
-                return false;
-
-            var normalized = prompt
-                    .Replace("’", "'")
-                    .Trim()
-                    .ToLowerInvariant();
-
-            return
-                Regex.IsMatch(
-                    normalized,
-                    @"\b(près|pres|proche)\s+de\s+moi\b",
-                    RegexOptions.CultureInvariant) ||
-
-                Regex.IsMatch(
-                    normalized,
-                    @"\bautour\s+de\s+moi\b",
-                    RegexOptions.CultureInvariant) ||
-
-                Regex.IsMatch(
-                    normalized,
-                    @"\baux\s+alentours\s+de\s+(moi|ma position)\b",
-                    RegexOptions.CultureInvariant) ||
-
-                Regex.IsMatch(
-                    normalized,
-                    @"\bprès\s+d'ici\b",
-                    RegexOptions.CultureInvariant) ||
-
-                normalized.Contains(
-                    "autour de ma position",
-                    StringComparison.Ordinal);
         }
 
         private static bool HasValidCoordinates(double? latitude, double? longitude)
@@ -1550,202 +770,7 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
                 !(latitude.Value == 0d &&
                   longitude.Value == 0d);
         }
-
-        private static Place? ResolvePlaceFromPrompt(string prompt, IReadOnlyList<Place> places)
-        {
-            if (string.IsNullOrWhiteSpace(prompt) || places.Count == 0)
-                return null;
-
-            var normalizedPrompt = NormalizeSearchText(prompt);
-
-            return places
-                .Where(p => !string.IsNullOrWhiteSpace(p.Name))
-                .OrderByDescending(p => p.Name.Length)
-                .FirstOrDefault(p =>
-                    normalizedPrompt.Contains(
-                        NormalizeSearchText(p.Name),
-                        StringComparison.OrdinalIgnoreCase));
-        }
-
-        private static string NormalizeSearchText(string value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-                return string.Empty;
-
-            return value
-                .Replace("’", "'")
-                .Replace("?", " ")
-                .Replace("!", " ")
-                .Replace(",", " ")
-                .Replace(".", " ")
-                .Trim();
-        }
-        private static double GeoDistanceKm(double lat1, double lon1, double lat2, double lon2)
-        {
-            const double earthRadiusKm = 6371.0088;
-
-            static double ToRad(double deg) => deg * Math.PI / 180.0;
-
-            var dLat = ToRad(lat2 - lat1);
-            var dLon = ToRad(lon2 - lon1);
-
-            var a =
-                Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
-                Math.Cos(ToRad(lat1)) *
-                Math.Cos(ToRad(lat2)) *
-                Math.Sin(dLon / 2) *
-                Math.Sin(dLon / 2);
-
-            var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-
-            return Math.Round(earthRadiusKm * c, 2);
-        }
-
-        private static IReadOnlyList<Place> DeduplicatePlacesByCoordinates(IEnumerable<Place> places, double duplicateRadiusKm = 0.1)
-        {
-            ArgumentNullException.ThrowIfNull(places);
-
-            var result = new List<Place>();
-
-            foreach (var place in places
-                         .Where(p =>
-                             p is not null &&
-                             !string.IsNullOrWhiteSpace(p.Name))
-                         .OrderBy(p => p.Id))
-            {
-                var latitude = (double)place.Latitude;
-                var longitude = (double)place.Longitude;
-
-                var existingIndex = result.FindIndex(existing =>
-                    AreLikelyGeographicDuplicates(
-                        place,
-                        existing,
-                        duplicateRadiusKm));
-
-                if (existingIndex < 0)
-                {
-                    result.Add(place);
-                    continue;
-                }
-
-                var existingPlace = result[existingIndex];
-
-                if (IsBetterCanonicalPlace(place, existingPlace))
-                {
-                    result[existingIndex] = place;
-                }
-            }
-
-            return result;
-        }
-
-        private static bool IsBetterCanonicalPlace(Place candidate, Place current)
-        {
-            var candidateScore = GetPlaceMetadataScore(candidate);
-            var currentScore = GetPlaceMetadataScore(current);
-
-            if (candidateScore != currentScore)
-                return candidateScore > currentScore;
-
-            var candidateName = candidate.Name?.Trim() ?? string.Empty;
-            var currentName = current.Name?.Trim() ?? string.Empty;
-
-            var candidateAbbreviated = IsAbbreviatedSaintName(candidateName);
-            var currentAbbreviated = IsAbbreviatedSaintName(currentName);
-
-            if (candidateAbbreviated != currentAbbreviated)
-                return !candidateAbbreviated;
-
-            var candidateHasHyphen = candidateName.Contains('-');
-            var currentHasHyphen = currentName.Contains('-');
-
-            if (candidateHasHyphen != currentHasHyphen)
-                return candidateHasHyphen;
-
-            return candidate.Id < current.Id;
-        }
-
-        private static bool IsAbbreviatedSaintName(string name)
-        {
-            return name.StartsWith(
-                       "St ",
-                       StringComparison.OrdinalIgnoreCase) ||
-                   name.StartsWith(
-                       "St-",
-                       StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static int GetPlaceMetadataScore(Place place)
-        {
-            var score = 0;
-
-            if (!string.IsNullOrWhiteSpace(place.Type))
-                score++;
-
-            if (!string.IsNullOrWhiteSpace(place.Tag))
-                score++;
-
-            if (place.Capacity > 0)
-                score++;
-
-            return score;
-        }
-
-        private static int GetTouristicInterestScore(Place place)
-        {
-            ArgumentNullException.ThrowIfNull(place);
-
-            var searchableText = string.Join(
-                ' ',
-                place.Name ?? string.Empty,
-                place.Type ?? string.Empty,
-                place.Tag ?? string.Empty);
-
-            if (searchableText.Contains(
-                    "tourist",
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                return 100;
-            }
-
-            if (searchableText.Contains(
-                    "mémorial",
-                    StringComparison.OrdinalIgnoreCase) ||
-                searchableText.Contains(
-                    "memorial",
-                    StringComparison.OrdinalIgnoreCase) ||
-                searchableText.Contains(
-                    "monument",
-                    StringComparison.OrdinalIgnoreCase) ||
-                searchableText.Contains(
-                    "château",
-                    StringComparison.OrdinalIgnoreCase) ||
-                searchableText.Contains(
-                    "chateau",
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                return 90;
-            }
-
-            if (searchableText.Contains(
-                    "parc",
-                    StringComparison.OrdinalIgnoreCase) ||
-                searchableText.Contains(
-                    "museum",
-                    StringComparison.OrdinalIgnoreCase) ||
-                searchableText.Contains(
-                    "musée",
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                return 80;
-            }
-
-            if (IsLocalityType(place.Type))
-                return 20;
-
-            return 50;
-        }
-
+        
         private static string ResolveResponseLanguage(string prompt, string? requestedLanguage)
         {
             if (!string.IsNullOrWhiteSpace(prompt))
@@ -1772,30 +797,19 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
             return string.IsNullOrWhiteSpace(requestedLanguage) ? "fr-FR" : requestedLanguage.Trim();
         }
 
-        private static string NormalizeMultilingualPromptForContext(string prompt)
+        private static string NormalizeEconomicPromptForContext(
+    string prompt)
         {
             if (string.IsNullOrWhiteSpace(prompt))
+            {
                 return string.Empty;
+            }
 
-            var result = prompt.Trim();
-
-            const RegexOptions options = RegexOptions.IgnoreCase | RegexOptions.CultureInvariant;
-
-            // Geographical expressions.
-            result = Regex.Replace(result, @"\bв\s+окрестностях\b", "autour de", options);
-            result = Regex.Replace(result, @"\bрядом\s+с\b", "près de", options);
-            // Temporal expressions.
-            result = Regex.Replace(result, @"\bсегодня\b", "aujourd'hui", options);
-            result = Regex.Replace(result, @"\bзавтра\b", "demain", options);
-            result = Regex.Replace(result, @"\b(в\s+эти\s+выходные|на\s+выходных)\b", "ce week-end", options);
-            result = Regex.Replace(result, @"\b(на\s+этой\s+неделе|на\s+неделе)\b", "cette semaine", options);
-            // Tourist intentions.
-            result = Regex.Replace(result, @"что\s+интересного\s+(есть|можно\s+увидеть)?", "quoi faire", options);
-            result = Regex.Replace(result, @"что\s+посмотреть", "quoi faire", options);
-            result = Regex.Replace(result, @"куда\s+сходить", "quoi faire", options);
-
-            return Regex.Replace(result, @"\s+", " ").Trim();
-
+            return Regex.Replace(
+                    prompt.Trim(),
+                    @"\s+",
+                    " ")
+                .Trim();
         }
         private async Task MarkCancelledSafeAsync(int interactionId, string? message, CancellationToken ct = default)
         {
@@ -1828,110 +842,120 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
                     interactionId);
             }
         }
-        private sealed record VerifiedEconomicTrendCandidate(string Name, double? DistanceKm, string? Type);
+        private sealed record VerifiedEconomicTrendCandidate(long Id, string Symbol, string Name, int AssetClass, string? ExchangeCode, string? CurrencyCode);
 
-        private static IReadOnlyList<VerifiedEconomicTrendCandidate> GetVerifiedEconomicTrendCandidates( LocalAiContextDTO context, IEnumerable<VerifiedEconomicTrendCandidate>? additionalCandidates = null)
+        private static IReadOnlyList<VerifiedEconomicTrendCandidate>GetVerifiedEconomicTrendCandidates(LocalAiContextDTO context)
         {
             ArgumentNullException.ThrowIfNull(context);
 
-            var instrumentCandidates = context.Instruments
+            return context.Instruments
+                .Concat(context.KeywordMatchedInstruments)
                 .Where(instrument =>
                     instrument.Active &&
                     (
-                        !string.IsNullOrWhiteSpace(instrument.Name) ||
-                        !string.IsNullOrWhiteSpace(instrument.Symbol)
+                        !string.IsNullOrWhiteSpace(instrument.Symbol) ||
+                        !string.IsNullOrWhiteSpace(instrument.Name)
                     ))
-                .Select(instrument => new VerifiedEconomicTrendCandidate(Name: BuildInstrumentCandidateName(instrument), DistanceKm: null, Type: $"Instrument / AssetClass {instrument.AssetClass}"));
-
-            var keywordCandidates = context.KeywordMatchedInstruments
-                .Where(instrument =>
-                    instrument.Active &&
-                    (
-                        !string.IsNullOrWhiteSpace(instrument.Name) || !string.IsNullOrWhiteSpace(instrument.Symbol)
-                    ))
-                .Select(instrument => new VerifiedEconomicTrendCandidate(Name: BuildInstrumentCandidateName(instrument), DistanceKm: null, Type: $"Instrument / AssetClass {instrument.AssetClass}"));
-
-            var additional = additionalCandidates ?? Enumerable.Empty<VerifiedEconomicTrendCandidate>();
-
-            return instrumentCandidates
-                .Concat(keywordCandidates)
-                .Concat(additional)
-                .Where(candidate => !string.IsNullOrWhiteSpace(candidate.Name))
-                .GroupBy(candidate => NormalizeFactKey(candidate.Name), StringComparer.OrdinalIgnoreCase)
+                .GroupBy(instrument => instrument.Id > 0 ? $"ID:{instrument.Id}" : $"SYMBOL:{instrument.Symbol?.Trim()}:{instrument.ExchangeCode?.Trim()}", StringComparer.OrdinalIgnoreCase)
                 .Select(group => group.First())
-                .OrderBy(candidate => candidate.Name, StringComparer.OrdinalIgnoreCase)
+                .Select(instrument =>
+                    new VerifiedEconomicTrendCandidate(
+                        Id: instrument.Id,
+                        Symbol: instrument.Symbol?.Trim() ?? string.Empty,
+                        Name: instrument.Name?.Trim() ?? string.Empty,
+                        AssetClass: instrument.AssetClass,
+                        ExchangeCode: instrument.ExchangeCode?.Trim(),
+                        CurrencyCode: instrument.CurrencyCode?.Trim()))
+                .OrderBy(candidate => candidate.Symbol, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(candidate => candidate.Name, StringComparer.OrdinalIgnoreCase)
                 .ToList();
         }
-
-        private static string BuildInstrumentCandidateName(LocalAiInstrumentContextDTO instrument)
-        {
-            var symbol = instrument.Symbol?.Trim();
-            var name = instrument.Name?.Trim();
-
-            if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(symbol))
-            {
-                return $"{name} ({symbol})";
-            }
-
-            if (!string.IsNullOrWhiteSpace(symbol))
-            {
-                return symbol;
-            }
-
-            return name ?? string.Empty;
-        }
-
-        private static string BuildVerifiedTourismResponse(IReadOnlyList<VerifiedEconomicTrendCandidate> candidates, string responseLanguage, int? requestedRecommendationCount = null)
+        private static string BuildVerifiedEconomicTrendResponse(IReadOnlyList<VerifiedEconomicTrendCandidate> candidates, string responseLanguage)
         {
             if (candidates.Count == 0)
-                return BuildNoLocalResultMessage(responseLanguage);
+            {
+                return BuildNoEconomicDataMessage(responseLanguage);
+            }
 
-            var maxCount = requestedRecommendationCount.HasValue ? Math.Clamp(requestedRecommendationCount.Value, 1, EconomicTrendsRecommendationPolicy.MaxEconomicTrendRecommendations) : EconomicTrendsRecommendationPolicy.MaxEconomicTrendRecommendations;
-            var selected = candidates.Take(maxCount).ToList();
             var result = new StringBuilder();
 
-            if (responseLanguage.StartsWith("ru", StringComparison.OrdinalIgnoreCase))
+            if (responseLanguage.StartsWith("fr", StringComparison.OrdinalIgnoreCase))
             {
-                result.AppendLine("Вот несколько мест, проверенных " + "по локальным данным OutZen:");
+                result.AppendLine(
+                    "Le modèle local n’a pas terminé son analyse. " +
+                    "Voici les instruments vérifiés disponibles :");
             }
-            else if (responseLanguage.StartsWith("en", StringComparison.OrdinalIgnoreCase))
+            else if (responseLanguage.StartsWith(
+                         "ru",
+                         StringComparison.OrdinalIgnoreCase))
             {
-                result.AppendLine("Here are several places verified " + "in EconomicTrendPolLESSIRE's local data:");
+                result.AppendLine(
+                    "Локальная модель не завершила анализ. " +
+                    "Доступны следующие проверенные инструменты:");
             }
             else
             {
-                result.AppendLine("Voici plusieurs lieux vérifiés " + "dans les données locales d’EconomicTrendPolLESSIRE :");
+                result.AppendLine(
+                    "The local model did not complete its analysis. " +
+                    "These verified instruments are available:");
             }
 
             result.AppendLine();
 
-            for (var index = 0; index < selected.Count; index++)
+            foreach (var candidate in candidates.Take(MaxEconomicTrendRecommendations))
             {
-                var candidate = selected[index];
-                var distance = candidate.DistanceKm.HasValue ? candidate.DistanceKm.Value.ToString("0.##", CultureInfo.InvariantCulture) + " km" : responseLanguage.StartsWith("ru", StringComparison.OrdinalIgnoreCase) ? "расстояние недоступно" : "distance non disponible";
+                result.Append("- ");
 
-                result.Append($"{index + 1}. " + $"{candidate.Name} — " + $"{distance}");
-
-                if (!string.IsNullOrWhiteSpace(candidate.Type))
+                if (!string.IsNullOrWhiteSpace(candidate.Name))
                 {
-                    result.Append($" — {candidate.Type}");
+                    result.Append(candidate.Name);
                 }
 
-                result.AppendLine(".");
+                if (!string.IsNullOrWhiteSpace(candidate.Symbol))
+                {
+                    result.Append($" ({candidate.Symbol})");
+                }
+
+                result.Append($" — AssetClass={candidate.AssetClass}");
+
+                if (!string.IsNullOrWhiteSpace(candidate.ExchangeCode))
+                {
+                    result.Append($" — Exchange={candidate.ExchangeCode}");
+                }
+
+                if (!string.IsNullOrWhiteSpace(candidate.CurrencyCode))
+                {
+                    result.Append($" — Currency={candidate.CurrencyCode}");
+                }
+
+                result.AppendLine();
+            }
+
+            return result
+                .ToString()
+                .Trim();
+        }
+
+        private static string BuildNoEconomicDataMessage(string responseLanguage)
+        {
+            if (responseLanguage.StartsWith("fr", StringComparison.OrdinalIgnoreCase))
+            {
+                return
+                    "Les données économiques vérifiées disponibles " +
+                    "sont insuffisantes pour répondre à cette demande.";
             }
 
             if (responseLanguage.StartsWith("ru", StringComparison.OrdinalIgnoreCase))
             {
-                result.Append(Environment.NewLine + "Приятного открытия!");
-            }
-            else
-            {
-                result.Append(Environment.NewLine + "Bonne découverte.");
+                return
+                    "Доступных проверенных экономических данных " +
+                    "недостаточно для ответа на этот запрос.";
             }
 
-            return result.ToString().Trim();
+            return
+                "The available verified economic data is insufficient " +
+                "to answer this request.";
         }
-
         private static int? ExtractRequestedRecommendationCount(string? prompt)
         {
             if (string.IsNullOrWhiteSpace(prompt))

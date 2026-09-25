@@ -28,43 +28,169 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
 
             var safePrompt = prompt?.Trim() ?? string.Empty;
 
-            /*
-             * First version of EconomicTrends :
-             *
-             * We use the current UTC day.
-             *
-             * We can then add a real
-             * temporal parser if the prompt contains :
-             *
-             * "Today"
-             * "yesterday"
-             * "this week"
-             * "over the last 30 days"
-             * etc.
-             */
             var dateFrom = DateTime.UtcNow.Date;
+
             var dateToExclusive = dateFrom.AddDays(1);
+
             var radiusKm = DefaultRadiusKm;
 
-            // -------------------------------------------------
-            // Position-independent text search
-            // -------------------------------------------------
+            // =========================================================
+            // ECONOMIC DATA
+            // =========================================================
+            //
+            // These queries do NOT depend on the user's GPS position.
+            //
 
-            Task<IReadOnlyList<LocalAiInstrumentContextDTO>> keywordTask = _repository.SearchInstrumentsByKeywordsAsync(safePrompt, KeywordInstrumentLimit, ct);
+            var keywordTask =
+                _repository.SearchInstrumentsByKeywordsAsync(
+                    safePrompt,
+                    KeywordInstrumentLimit,
+                    ct);
 
-            /*
-             * Current methods of
-             * ILocalAiDataRepository still requires
-             * latitude / longitude / radiusKm.
-             *
-             * If no position is available,
-             * We absolutely do not let them get away with it 0 / 0.
-             */
-            if (!HasValidCoordinates(latitude, longitude))
+            var instrumentsTask =
+                _repository.GetActiveInstrumentsAsync(
+                    100,
+                    ct);
+
+            var candlesTask =
+                _repository.GetMarketCandlesAsync(
+                    dateFrom,
+                    dateToExclusive,
+                    200,
+                    ct);
+
+            var quotesTask =
+                _repository.GetMarketQuotesAsync(
+                    dateFrom,
+                    dateToExclusive,
+                    200,
+                    ct);
+
+            var snapshotsTask =
+                _repository.GetMarketSnapshotsAsync(
+                    100,
+                    ct);
+
+            var tradesTask =
+                _repository.GetMarketTradesAsync(
+                    dateFrom,
+                    dateToExclusive,
+                    200,
+                    ct);
+
+            var providersTask =
+                _repository.GetActiveProvidersAsync(
+                    50,
+                    ct);
+
+            var providerInstrumentsTask =
+                _repository.GetActiveProviderInstrumentsAsync(
+                    200,
+                    ct);
+
+            var indicatorsTask =
+                _repository.GetTechnicalIndicatorsAsync(
+                    dateFrom,
+                    dateToExclusive,
+                    200,
+                    ct);
+
+            // =========================================================
+            // USER MESSAGES
+            // =========================================================
+            //
+            // Only this part optionally uses geography.
+            //
+
+            Task<IReadOnlyList<LocalAiUserMessageContextDTO>> userMessagesTask;
+
+            if (HasValidCoordinates(latitude, longitude))
             {
-                var keywordInstruments = await keywordTask.ConfigureAwait(false);
+                userMessagesTask =
+                    _repository.GetNearbyUserMessagesAsync(
+                        latitude!.Value,
+                        longitude!.Value,
+                        radiusKm,
+                        DateTime.UtcNow.AddDays(-1),
+                        UserMessageLimit,
+                        ct);
+            }
+            else
+            {
+                userMessagesTask =
+                    _repository.GetRecentUserMessagesAsync(
+                        DateTime.UtcNow.AddDays(-1),
+                        UserMessageLimit,
+                        ct);
+            }
 
-                var noGeoContext = new LocalAiContextDTO
+            // =========================================================
+            // PARALLEL EXECUTION
+            // =========================================================
+
+            await Task.WhenAll(
+                    keywordTask,
+                    instrumentsTask,
+                    candlesTask,
+                    quotesTask,
+                    snapshotsTask,
+                    tradesTask,
+                    providersTask,
+                    providerInstrumentsTask,
+                    indicatorsTask,
+                    userMessagesTask)
+                .ConfigureAwait(false);
+
+            // =========================================================
+            // MATERIALIZATION
+            // =========================================================
+
+            var keywordInstruments =
+                await keywordTask
+                    .ConfigureAwait(false);
+
+            var instruments =
+                await instrumentsTask
+                    .ConfigureAwait(false);
+
+            var candles =
+                await candlesTask
+                    .ConfigureAwait(false);
+
+            var quotes =
+                await quotesTask
+                    .ConfigureAwait(false);
+
+            var snapshots =
+                await snapshotsTask
+                    .ConfigureAwait(false);
+
+            var trades =
+                await tradesTask
+                    .ConfigureAwait(false);
+
+            var providers =
+                await providersTask
+                    .ConfigureAwait(false);
+
+            var providerInstruments =
+                await providerInstrumentsTask
+                    .ConfigureAwait(false);
+
+            var indicators =
+                await indicatorsTask
+                    .ConfigureAwait(false);
+
+            var userMessages =
+                await userMessagesTask
+                    .ConfigureAwait(false);
+
+            // =========================================================
+            // FINAL CONTEXT
+            // =========================================================
+
+            var context =
+                new LocalAiContextDTO
                 {
                     UserPrompt = safePrompt,
                     Latitude = latitude,
@@ -73,57 +199,6 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Services
                     DateFrom = dateFrom,
                     DateToExclusive = dateToExclusive,
                     KeywordMatchedInstruments = keywordInstruments,
-                    Instruments = keywordInstruments
-                };
-
-                LogContext(noGeoContext);
-
-                return noGeoContext;
-            }
-
-            var lat = latitude!.Value;
-            var lng = longitude!.Value;
-
-            // -------------------------------------------------
-            // Parallel EconomicTrends context acquisition
-            // -------------------------------------------------
-
-            Task<IEnumerable<LocalAiInstrumentContextDTO>>instrumentsTask = _repository.GetNearbyInstrumentsAsync(lat, lng, radiusKm, ct);
-            Task<IEnumerable<LocalAiMarketCandleContextDTO>>candlesTask = _repository.GetNearbyMarketCandlesAsync(lat, lng, dateFrom, dateToExclusive, radiusKm, ct);
-            Task<IEnumerable<LocalAiMarketQuoteContextDTO>>quotesTask = _repository.GetNearbyMarketQuoteAsync(lat, lng, dateFrom, dateToExclusive, radiusKm, ct);
-            Task<IEnumerable<LocalAiMarketSnapshotContextDTO>>snapshotsTask = _repository.GetNearbyMarketSnapshotAsync(lat, lng, dateFrom, radiusKm, ct);
-            Task<IEnumerable<LocalAiMarketTradeContextDTO>>tradesTask = _repository.GetNearbyMarketTradeContextAsync(lat, lng, dateFrom, dateToExclusive, radiusKm, ct);
-            Task<IEnumerable<LocalAiProviderContextDTO>>providersTask = _repository.GetNearbyProviderAsync(lat, lng, dateFrom, dateToExclusive, radiusKm, ct);
-            Task<IEnumerable<LocalAiProviderInstrumentContextDTO>>providerInstrumentsTask = _repository.GetNearbyProviderInstrumentsAsync(lat, lng, radiusKm, ct);
-            Task<IEnumerable<LocalAiTechnicalIndicatorContextDTO>>indicatorsTask = _repository.GetNearbyTechnicalIndicatorsAsync(lat, lng, radiusKm, ct);
-            Task<IEnumerable<LocalAiUserMessageContextDTO>>userMessagesTask = _repository.GetNearbyUserMessagesAsync(lat, lng, radiusKm, sinceUtc: DateTime.UtcNow.AddDays(-1), limit: UserMessageLimit, ct: ct);
-
-            await Task.WhenAll(keywordTask, instrumentsTask, candlesTask, quotesTask, snapshotsTask, tradesTask, providersTask, providerInstrumentsTask, indicatorsTask, userMessagesTask).ConfigureAwait(false);
-
-            // -------------------------------------------------
-            // Materialization
-            // -------------------------------------------------
-
-            var keywordInstrumentsResult = await keywordTask.ConfigureAwait(false);
-            var instruments = (await instrumentsTask.ConfigureAwait(false)).ToList();
-            var candles = (await candlesTask.ConfigureAwait(false)).ToList();
-            var quotes = (await quotesTask.ConfigureAwait(false)).ToList();
-            var snapshots = (await snapshotsTask.ConfigureAwait(false)).ToList();
-            var trades = (await tradesTask.ConfigureAwait(false)).ToList();
-            var providers = (await providersTask.ConfigureAwait(false)).ToList();
-            var providerInstruments = (await providerInstrumentsTask.ConfigureAwait(false)).ToList();
-            var indicators = (await indicatorsTask.ConfigureAwait(false)).ToList();
-            var userMessages = (await userMessagesTask.ConfigureAwait(false)).ToList();
-            var context =
-                new LocalAiContextDTO
-                {
-                    UserPrompt = safePrompt,
-                    Latitude = lat,
-                    Longitude = lng,
-                    RadiusKm = radiusKm,
-                    DateFrom = dateFrom,
-                    DateToExclusive = dateToExclusive,
-                    KeywordMatchedInstruments = keywordInstrumentsResult,
                     Instruments = instruments,
                     MarketCandles = candles,
                     MarketQuotes = quotes,
