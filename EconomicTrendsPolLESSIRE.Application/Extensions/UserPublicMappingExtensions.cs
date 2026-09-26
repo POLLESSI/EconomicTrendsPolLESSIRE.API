@@ -14,8 +14,8 @@ namespace EconomicTrendsPolLESSIRE.Application.Extensions
             {
                 Id = user.Id,
                 Email = user.Email,
-                Role = user.Role.ToString(),
-                Status = user.Status.ToString(),
+                Role = user.Role,
+                Status = user.Status,
                 Active = user.Active
             };
         }

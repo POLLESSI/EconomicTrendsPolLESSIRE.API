@@ -6,11 +6,13 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>56c60060-d30b-48a0-b962-546726763fe1</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Dapper" Version="2.1.79" />
     <PackageReference Include="Konscious.Security.Cryptography.Argon2" Version="1.3.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.31" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.30" />
 	<PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.3" />
     <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.22.0" />
@@ -31,7 +33,6 @@
   <ItemGroup>
     <Folder Include="BackgroundService\" />
     <Folder Include="BackgroundWorkers\" />
-    <Folder Include="Controllers\Diagnostics\" />
     <Folder Include="Extensions\" />
     <Folder Include="Hubs\Serilog\Sinks\" />
     <Folder Include="Middlewares\" />

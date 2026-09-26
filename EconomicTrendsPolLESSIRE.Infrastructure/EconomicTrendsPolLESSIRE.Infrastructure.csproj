@@ -30,7 +30,6 @@
 		<Folder Include="SignalR\" />
 		<Folder Include="Resilience\" />
 		<Folder Include="Options\" />
-		<Folder Include="NoSql\" />
 		<Folder Include="Services\Monitoring\" />
 	</ItemGroup>
 
@@ -39,6 +38,8 @@
 		<PackageReference Include="Dapper" Version="2.1.79" />
 		<PackageReference Include="Konscious.Security.Cryptography.Argon2" Version="1.3.1" />
 		<PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.3" />
+		<PackageReference Include="MongoDB.Driver" Version="3.12.0" />
+		<PackageReference Include="MongoDB.Driver.Core" Version="2.30.0" />
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.22.0" />
 	</ItemGroup>
 
