@@ -1,23 +1,26 @@
 using EconomicTrendsPolLESSIRE.API.Tools;
+using EconomicTrendsPolLESSIRE.API.Options;
 using EconomicTrendsPolLESSIRE.Application.Interfaces;
+using EconomicTrendsPolLESSIRE.Application.MarketData;
 using EconomicTrendsPolLESSIRE.Contracts.Hubs;
 using EconomicTrendsPolLESSIRE.Domain.Entities;
 using EconomicTrendsPolLESSIRE.Domain.Interfaces;
 using EconomicTrendsPolLESSIRE.Hubs;
 using EconomicTrendsPolLESSIRE.Hubs.Hubs;
+using EconomicTrendsPolLESSIRE.Infrastructure.MarketData;
 using EconomicTrendsPolLESSIRE.Infrastructure.Repositories;
 using EconomicTrendsPolLESSIRE.Infrastructure.Security;
 using EconomicTrendsPolLESSIRE.Infrastructure.Services;
 using EconomicTrendsPolLESSIRE.Shared.StaticConfig.Constants;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
 //using Microsoft.AspNetCore.Authorization;
 using Microsoft.OpenApi.Models;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.Data.SqlClient;
-using System.Text.Json.Serialization;
 using System.Data;
 using System.Text;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -76,11 +79,18 @@ builder.Services.AddScoped<IDbConnection>(_ => new SqlConnection(connectionStrin
 // Realtime publisher
 builder.Services.AddSingleton<IMarketRealtimePublisher, SignalRMarketRealtimePublisher>();
 
+builder.Services.Configure<MarketDataOptions>(builder.Configuration.GetSection("MarketData"));
+
 //Services
 builder.Services.AddScoped<IInstrumentService, InstrumentService>();
 builder.Services.AddScoped<ILocalAiContextService, LocalAiContextService>();
 builder.Services.AddScoped<IMarketCandleService, MarketCandleService>();
+builder.Services.AddSingleton<IMarketDataSource, MockMarketDataSource>();
+builder.Services.AddScoped<IMarketIngestionPipeline, MarketIngestionPipeline>();
 builder.Services.AddScoped<IMarketQuoteService, MarketQuoteService>();
+builder.Services.AddHostedService<MarketIngestionHostedService>();
+builder.Services.AddScoped<IMarketReferencePipeline, MarketReferencePipeline>();
+builder.Services.AddScoped<IMarketSnapshotProjector, MarketSnapshotProjector>();
 builder.Services.AddScoped<IMarketSnapshotService, MarketSnapshotService>();
 builder.Services.AddScoped<IMarketTradeService, MarketTradeService>();
 builder.Services.AddScoped<IMessageCorrelationService, MessageCorrelationService>();
@@ -88,6 +98,7 @@ builder.Services.AddScoped<IMessageTriageService, MessageTriageService>();
 builder.Services.AddScoped<IProfanityService, ProfanityService>();
 builder.Services.AddScoped<IProfanityAdminService, ProfanityAdminService>();
 builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+builder.Services.AddScoped<ITechnicalIndicatorCalculator, TechnicalIndicatorCalculator>();
 builder.Services.AddScoped<ITechnicalIndicatorService, TechnicalIndicatorService>();
 builder.Services.AddScoped<IUserHubService, UserHubService>();
 builder.Services.AddScoped<IUserMessageService, UserMessageService>();
@@ -186,6 +197,12 @@ builder.Services
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy(
+        "Admin",
+        policy =>
+            policy.RequireRole(
+                Roles.Admin));
+
+    options.AddPolicy(
         "AdminOrModo",
         policy =>
             policy.RequireRole(
@@ -211,6 +228,38 @@ app.MapControllers();
 app.MapHub<MarketDataHub>("/hubs/market-data");
 
 app.MapHub<UserHub>($"/{UserHubMethods.HubPath}");
+
+app.MapGet("/_diag/db", async () =>
+{
+    await using var connection = new SqlConnection(connectionString);
+
+    await connection.OpenAsync();
+
+    await using var command = connection.CreateCommand();
+
+    command.CommandText = @"
+                        SELECT
+                            @@SERVERNAME AS ServerName,
+                            DB_NAME() AS DatabaseName,
+                            (
+                                SELECT COUNT(*)
+                                FROM dbo.Users
+                            ) AS UserCount;
+        
+                        ";
+
+    await using var reader = await command.ExecuteReaderAsync();
+
+    await reader.ReadAsync();
+
+    return Results.Ok(new
+    {
+        ServerName = reader["ServerName"]?.ToString(),
+        DatabaseName = reader["DatabaseName"]?.ToString(),
+        UserCount = Convert.ToInt32(reader["UserCount"])
+    });
+})
+.AllowAnonymous();
 
 app.Run();
 

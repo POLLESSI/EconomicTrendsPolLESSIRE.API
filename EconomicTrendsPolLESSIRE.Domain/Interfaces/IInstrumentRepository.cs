@@ -9,6 +9,7 @@ namespace EconomicTrendsPolLESSIRE.Domain.Interfaces
         Task<Instrument?> GetInstrumentByIdAsync(long id, CancellationToken ct = default);
         Task<bool> DeleteInstrumentAsync(long id);
         Task<int> ArchivePastInstrumentsAsync(CancellationToken ct = default);
+        Task<Instrument> UpsertByNaturalKeyAsync(string symbol, string name, int assetClass, string? exchangeCode, string? currencyCode, CancellationToken ct = default);
     }
 }
 

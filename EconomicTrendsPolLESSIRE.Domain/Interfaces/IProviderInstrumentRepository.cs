@@ -9,6 +9,9 @@ namespace EconomicTrendsPolLESSIRE.Domain.Interfaces
         Task<ProviderInstrument?> GetProviderInstrumentByIdAsync(int providerId, long instrumentId, CancellationToken ct = default);
         Task<bool> DeleteProviderInstrumentAsync(int providerId, long instrumentId);
         Task<int> ArchivePastProviderInstrumentsAsync(CancellationToken ct = default);
+        Task<IReadOnlyCollection<ProviderInstrument>>GetActiveSubscriptionsAsync(string providerCode, CancellationToken ct = default);
+
+        Task UpsertAsync(int providerId, long instrumentId, string providerSymbol, bool realtime, int? delaySeconds, CancellationToken ct = default);
     }
 }
 

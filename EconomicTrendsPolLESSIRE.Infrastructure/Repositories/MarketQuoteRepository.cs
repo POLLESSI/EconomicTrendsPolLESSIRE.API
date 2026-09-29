@@ -137,6 +137,39 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
                 return null;
             }
         }
+
+        public async Task InsertBatchAsync(IReadOnlyCollection<MarketQuote> quotes, CancellationToken ct = default)
+        {
+            if (quotes.Count == 0)
+                return;
+
+            const string sql = @"
+                            INSERT INTO dbo.MarketQuote
+                            (
+                                InstrumentId,
+                                ProviderId,
+                                TimestampUtc,
+                                ReceivedAtUtc,
+                                BidPrice,
+                                BidSize,
+                                AskPrice,
+                                AskSize
+                            )
+                            VALUES
+                            (
+                                @InstrumentId,
+                                @ProviderId,
+                                @TimestampUtc,
+                                @ReceivedAtUtc,
+                                @BidPrice,
+                                @BidSize,
+                                @AskPrice,
+                                @AskSize
+                            );
+                            ";
+
+            await _connection.ExecuteAsync(new CommandDefinition(sql, quotes, cancellationToken: ct));
+        }
     }
 }
 

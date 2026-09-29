@@ -53,7 +53,7 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
         // hash/salt writing (without clear token)
         public Task AddHashedAsync(string email, DateTime expiryDate, byte[] tokenHash, byte[] tokenSalt)
             => _connection.ExecuteAsync(@"
-                                    INSERT INTO [RefreshTokens](Email, ExpiryDate, Status, IsRevoked, CreatedAt, TokenHash, TokenSalt)
+                                    INSERT INTO [dbo].[RefreshTokens](Email, ExpiryDate, Status, IsRevoked, CreatedAt, TokenHash, TokenSalt)
                                     VALUES (@Email, @ExpiryDate, @Status, 0, SYSUTCDATETIME(), @TokenHash, @TokenSalt)",
                 new
                 {
@@ -67,7 +67,7 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
         // ========== CREATE ==========
         public Task AddAsync(RefreshToken refreshToken)
             => _connection.ExecuteAsync(@"
-                                    INSERT INTO [RefreshTokens]
+                                    INSERT INTO [dbo].[RefreshTokens]
                                         (Token, Email, ExpiryDate, Status, IsRevoked, CreatedAt, TokenHash, TokenSalt)
                                     VALUES
                                         (@Token, @Email, @ExpiryDate, @Status, CASE WHEN @Status=@Revoked THEN 1 ELSE 0 END, SYSUTCDATETIME(), @TokenHash, @TokenSalt)",
@@ -122,3 +122,107 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
                 new { Id = id, Revoked = (int)RefreshTokenStatus.Revoked });
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Copyrigtht (c) EconomicTrendsPolLESSIRE https://github.com/POLLESSI/EconomicTrendsPolLESSIRE. All rights reserved.

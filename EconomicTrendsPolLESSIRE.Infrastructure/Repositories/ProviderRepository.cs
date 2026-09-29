@@ -85,6 +85,67 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
             }
         }
 
+        public async Task<Provider> GetOrCreateByCodeAsync(string code, CancellationToken ct = default)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(code);
+
+            code = code.Trim().ToUpperInvariant();
+
+            const string selectSql = @"
+                                    SELECT TOP (1)
+                                        Id,
+                                        Code,
+                                        Name,
+                                        CreatedAtUtc,
+                                        Active
+                                    FROM dbo.Provider
+                                    WHERE Code = @Code;
+                                    ";
+
+            var existing =
+                await _connection.QueryFirstOrDefaultAsync<Provider>(
+                    new CommandDefinition(
+                        selectSql,
+                        new { Code = code },
+                        cancellationToken: ct));
+
+            if (existing is not null)
+            {
+                return existing;
+            }
+
+            const string insertSql = @"
+                                INSERT INTO dbo.Provider
+                                (
+                                    Code,
+                                    Name,
+                                    Active
+                                )
+                                OUTPUT
+                                    INSERTED.Id,
+                                    INSERTED.Code,
+                                    INSERTED.Name,
+                                    INSERTED.CreatedAtUtc,
+                                    INSERTED.Active
+                                VALUES
+                                (
+                                    @Code,
+                                    @Name,
+                                    1
+                                );
+                                ";
+
+            return await _connection.QuerySingleAsync<Provider>(
+                new CommandDefinition(
+                    insertSql,
+                    new
+                    {
+                        Code = code,
+                        Name = code
+                    },
+                    cancellationToken: ct));
+        }
+
         public async Task<Provider?> GetProviderByIdAsync(int id, CancellationToken ct = default)
         {
             const string sql = @"

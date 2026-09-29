@@ -10,6 +10,7 @@ namespace EconomicTrendsPolLESSIRE.Domain.Interfaces
         Task<MarketQuote?> GetMarketQuoteByIdAsync(long id, CancellationToken ct = default);
         Task<bool> DeleteMarketQuoteAsync(long id);
         Task<int> ArchivePastMarketQuotesAsync(CancellationToken ct = default);
+        Task InsertBatchAsync(IReadOnlyCollection<MarketQuote> quotes, CancellationToken ct = default);
     }
 }
 

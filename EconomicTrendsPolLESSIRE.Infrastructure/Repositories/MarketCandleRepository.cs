@@ -133,6 +133,69 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
             }
             
         }
+
+        public async Task UpsertBatchAsync(IReadOnlyCollection<MarketCandle> candles, CancellationToken ct = default)
+        {
+            if (candles.Count == 0)
+                return;
+
+            const string sql = @"
+                            UPDATE dbo.MarketCandle
+                            SET
+                                OpenPrice = @OpenPrice,
+                                HighPrice = @HighPrice,
+                                LowPrice = @LowPrice,
+                                ClosePrice = @ClosePrice,
+                                Volume = @Volume,
+                                VWAP = @VWAP,
+                                TradeCount = @TradeCount,
+                                IsFinal = @IsFinal,
+                                Active = 1
+                            WHERE InstrumentId = @InstrumentId
+                                AND IntervalCode = @IntervalCode
+                                AND OpenTimeUtc = @OpenTimeUtc;
+
+                            IF @@ROWCOUNT = 0
+                            BEGIN
+                                INSERT INTO dbo.MarketCandle
+                                (
+                                    InstrumentId,
+                                    IntervalCode,
+                                    OpenTimeUtc,
+                                    OpenPrice,
+                                    HighPrice,
+                                    LowPrice,
+                                    ClosePrice,
+                                    Volume,
+                                    VWAP,
+                                    TradeCount,
+                                    IsFinal,
+                                    Active
+                                )
+                                VALUES
+                                (
+                                    @InstrumentId,
+                                    @IntervalCode,
+                                    @OpenTimeUtc,
+                                    @OpenPrice,
+                                    @HighPrice,
+                                    @LowPrice,
+                                    @ClosePrice,
+                                    @Volume,
+                                    @VWAP,
+                                    @TradeCount,
+                                    @IsFinal,
+                                    1
+                                );
+                            END;
+                            ";
+
+            await _connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    candles,
+                    cancellationToken: ct));
+        }
     }
 }
 

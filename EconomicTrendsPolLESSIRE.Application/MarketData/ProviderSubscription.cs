@@ -1,9 +1,19 @@
-@EconomicTrendPolLESSIRE.API_HostAddress = http://localhost:5267
+﻿namespace EconomicTrendsPolLESSIRE.Application.MarketData
+{
+    public sealed record ProviderSubscription(long InstrumentId, int ProviderId, string ProviderSymbol);
 
-GET {{EconomicTrendPolLESSIRE.API_HostAddress}}/weatherforecast/
-Accept: application/json
+}
 
-###
+
+
+
+
+
+
+
+
+
+
 
 
 

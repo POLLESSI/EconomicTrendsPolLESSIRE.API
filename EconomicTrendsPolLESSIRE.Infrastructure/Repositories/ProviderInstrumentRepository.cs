@@ -151,6 +151,87 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
                 return null;
             }
         }
+
+        public async Task<IReadOnlyCollection<ProviderInstrument>>GetActiveSubscriptionsAsync(string providerCode, CancellationToken ct = default)
+        {
+            const string sql = @"
+                            SELECT
+                                PI.ProviderId,
+                                PI.InstrumentId,
+                                PI.ProviderSymbol,
+                                PI.Realtime,
+                                PI.DelaySeconds,
+                                PI.Active
+                            FROM dbo.ProviderInstrument PI
+                            INNER JOIN dbo.Provider P
+                                ON P.Id = PI.ProviderId
+                            WHERE PI.Active = 1
+                              AND P.Active = 1
+                              AND P.Code = @ProviderCode
+                            ORDER BY PI.InstrumentId;
+                            ";
+
+            var result =
+                await _connection.QueryAsync<ProviderInstrument>(
+                    new CommandDefinition(
+                        sql,
+                        new
+                        {
+                            ProviderCode = providerCode.Trim().ToUpperInvariant()
+                        },
+                        cancellationToken: ct));
+
+            return result.ToArray();
+        }
+
+        public async Task UpsertAsync(int providerId, long instrumentId, string providerSymbol, bool realtime, int? delaySeconds, CancellationToken ct = default)
+        {
+            const string sql = @"
+                            UPDATE dbo.ProviderInstrument
+                            SET
+                                ProviderSymbol = @ProviderSymbol,
+                                Realtime = @Realtime,
+                                DelaySeconds = @DelaySeconds,
+                                Active = 1
+                            WHERE ProviderId = @ProviderId
+                              AND InstrumentId = @InstrumentId;
+
+                            IF @@ROWCOUNT = 0
+                            BEGIN
+                                INSERT INTO dbo.ProviderInstrument
+                                (
+                                    ProviderId,
+                                    InstrumentId,
+                                    ProviderSymbol,
+                                    Realtime,
+                                    DelaySeconds,
+                                    Active
+                                )
+                                VALUES
+                                (
+                                    @ProviderId,
+                                    @InstrumentId,
+                                    @ProviderSymbol,
+                                    @Realtime,
+                                    @DelaySeconds,
+                                    1
+                                );
+                            END;
+                            ";
+
+            await _connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        ProviderId = providerId,
+                        InstrumentId = instrumentId,
+                        ProviderSymbol = providerSymbol,
+                        Realtime = realtime,
+                        DelaySeconds = delaySeconds
+                    },
+                    cancellationToken: ct));
+        }
     }
 }
 

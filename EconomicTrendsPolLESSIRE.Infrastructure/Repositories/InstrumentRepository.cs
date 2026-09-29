@@ -125,6 +125,84 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
                 return null;
             }
         }
+
+        public async Task<Instrument> UpsertByNaturalKeyAsync(string symbol, string name, int assetClass, string? exchangeCode, string? currencyCode, CancellationToken ct = default)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(symbol);
+            ArgumentException.ThrowIfNullOrWhiteSpace(name);
+
+            symbol = symbol.Trim().ToUpperInvariant();
+
+            const string sql = @"
+                            UPDATE dbo.Instrument
+                            SET
+                                Name = @Name,
+                                AssetClass = @AssetClass,
+                                CurrencyCode = @CurrencyCode,
+                                Active = 1
+                            WHERE Symbol = @Symbol
+                              AND
+                              (
+                                  ExchangeCode = @ExchangeCode
+                                  OR
+                                  (ExchangeCode IS NULL AND @ExchangeCode IS NULL)
+                              );
+
+                            IF @@ROWCOUNT = 0
+                            BEGIN
+                                INSERT INTO dbo.Instrument
+                                (
+                                    Symbol,
+                                    Name,
+                                    AssetClass,
+                                    ExchangeCode,
+                                    CurrencyCode,
+                                    Active
+                                )
+                                VALUES
+                                (
+                                    @Symbol,
+                                    @Name,
+                                    @AssetClass,
+                                    @ExchangeCode,
+                                    @CurrencyCode,
+                                    1
+                                );
+                            END;
+
+                            SELECT TOP (1)
+                                Id,
+                                Symbol,
+                                Name,
+                                AssetClass,
+                                ExchangeCode,
+                                CurrencyCode,
+                                CreatedAtUtc,
+                                Active
+                            FROM dbo.Instrument
+                            WHERE Symbol = @Symbol
+                              AND
+                              (
+                                  ExchangeCode = @ExchangeCode
+                                  OR
+                                  (ExchangeCode IS NULL AND @ExchangeCode IS NULL)
+                              )
+                            ORDER BY Id DESC;
+                            ";
+
+            return await _connection.QuerySingleAsync<Instrument>(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        Symbol = symbol,
+                        Name = name.Trim(),
+                        AssetClass = assetClass,
+                        ExchangeCode = exchangeCode,
+                        CurrencyCode = currencyCode
+                    },
+                    cancellationToken: ct));
+        }
     }
 }
 

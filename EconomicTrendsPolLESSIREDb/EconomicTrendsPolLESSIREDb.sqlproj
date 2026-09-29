@@ -81,6 +81,7 @@
     <Build Include="Tables\MistralJob.sql" />
     <Build Include="Tables\Suggestion.sql" />
     <Build Include="Tables\Place.sql" />
+    <Build Include="Tables\RefreshTokens.sql" />
   </ItemGroup>
   <ItemGroup>
     <None Include="EconomicTrendsPolLESSIREDb.publish.xml" />

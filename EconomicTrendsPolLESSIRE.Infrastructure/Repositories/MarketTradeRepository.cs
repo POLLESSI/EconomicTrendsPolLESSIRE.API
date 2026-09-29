@@ -111,6 +111,41 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
             }
         }
 
+        public async Task InsertBatchAsync(IReadOnlyCollection<MarketTrade> trades, CancellationToken ct = default)
+        {
+            if (trades.Count == 0)
+                return;
+
+            const string sql = @"
+                            INSERT INTO dbo.MarketTrade
+                            (
+                                InstrumentId,
+                                ProviderId,
+                                TimestampUtc,
+                                ReceivedAtUtc,
+                                Price,
+                                Quantity,
+                                SequenceNumber
+                            )
+                            VALUES
+                            (
+                                @InstrumentId,
+                                @ProviderId,
+                                @TimestampUtc,
+                                @ReceivedAtUtc,
+                                @Price,
+                                @Quantity,
+                                @SequenceNumber
+                            );
+                            ";
+
+            await _connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    trades,
+                    cancellationToken: ct));
+        }
+
         public async Task<MarketTrade?> SaveMarketTradeAsync(MarketTrade markettrd)
         {
             const string sql = @"
