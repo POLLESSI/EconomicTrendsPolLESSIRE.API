@@ -4,8 +4,7 @@ using MongoDB.Driver;
 
 namespace EconomicTrendsPolLESSIRE.Infrastructure.NoSql.Mongo.Repositories
 {
-    public sealed class MongoRepository<TDocument> : IMongoRepository<TDocument>
-        where TDocument : class
+    public sealed class MongoRepository<TDocument> : IMongoRepository<TDocument> where TDocument : class
     {
         private readonly IMongoCollection<TDocument> _collection;
 

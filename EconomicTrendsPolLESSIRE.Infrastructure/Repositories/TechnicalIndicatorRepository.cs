@@ -80,11 +80,6 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
             }
         }
 
-        public Task<bool> DeleteTechnicalIndicatorAsync(long instrumentId)
-        {
-            throw new NotImplementedException();
-        }
-
         public Task<IEnumerable<TechnicalIndicator>> GetAllTechnicalIndicatorAsync(int limit = 200, CancellationToken ct = default)
         {
             const string sql = @"
@@ -150,7 +145,7 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
                 parameters.Add("@Value1", technicalindic.Value1, DbType.Decimal);
                 parameters.Add("@Value2", technicalindic.Value2, DbType.Decimal);
                 parameters.Add("@Value3", technicalindic.Value3, DbType.Decimal);
-                parameters.Add("@ParameterHash", technicalindic.ParameterHash, DbType.Byte);
+                parameters.Add("@ParameterHash", technicalindic.ParameterHash, DbType.Binary, size: 16);
 
                 var affectedRows = await _connection.ExecuteAsync(sql, parameters);
 
@@ -175,6 +170,53 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
 
                 return null;
             }
+        }
+
+        public async Task UpsertAsync(TechnicalIndicator indicator, CancellationToken ct = default)
+        {
+            const string sql = @"
+                            UPDATE dbo.TechnicalIndicator
+                            SET
+                                Value1 = @Value1,
+                                Value2 = @Value2,
+                                Value3 = @Value3,
+                                ParameterHash = @ParameterHash,
+                                Active = 1
+                            WHERE InstrumentId = @InstrumentId
+                              AND IntervalCode = @IntervalCode
+                              AND IndicatorType = @IndicatorType
+                              AND TimestampUtc = @TimestampUtc;
+
+                            IF @@ROWCOUNT = 0
+                            BEGIN
+                                INSERT INTO dbo.TechnicalIndicator
+                                (
+                                    InstrumentId,
+                                    IntervalCode,
+                                    TimestampUtc,
+                                    IndicatorType,
+                                    Value1,
+                                    Value2,
+                                    Value3,
+                                    ParameterHash,
+                                    Active
+                                )
+                                VALUES
+                                (
+                                    @InstrumentId,
+                                    @IntervalCode,
+                                    @TimestampUtc,
+                                    @IndicatorType,
+                                    @Value1,
+                                    @Value2,
+                                    @Value3,
+                                    @ParameterHash,
+                                    1
+                                );
+                            END;
+                            ";
+
+            await _connection.ExecuteAsync(new CommandDefinition(sql, indicator, cancellationToken: ct));
         }
     }
 }

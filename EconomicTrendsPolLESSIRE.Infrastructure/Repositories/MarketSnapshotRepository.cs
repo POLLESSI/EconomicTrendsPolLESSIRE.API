@@ -152,6 +152,65 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
                 return null;
             }
         }
+
+        public async Task UpsertAsync(MarketSnapshot snapshot, CancellationToken ct = default)
+        {
+            const string sql = @"
+                            UPDATE dbo.MarketSnapshot
+                            SET
+                                LastPrice = @LastPrice,
+                                BidPrice = @BidPrice,
+                                AskPrice = @AskPrice,
+                                OpenPrice = @OpenPrice,
+                                HighPrice = @HighPrice,
+                                LowPrice = @LowPrice,
+                                PreviousClose = @PreviousClose,
+                                Volume = @Volume,
+                                LastProviderId = @LastProviderId,
+                                MarketTimestampUtc = @MarketTimestampUtc,
+                                ReceivedAtUtc = @ReceivedAtUtc,
+                                Active = 1
+                            WHERE InstrumentId = @InstrumentId;
+
+                            IF @@ROWCOUNT = 0
+                            BEGIN
+                                INSERT INTO dbo.MarketSnapshot
+                                (
+                                    InstrumentId,
+                                    LastPrice,
+                                    BidPrice,
+                                    AskPrice,
+                                    OpenPrice,
+                                    HighPrice,
+                                    LowPrice,
+                                    PreviousClose,
+                                    Volume,
+                                    LastProviderId,
+                                    MarketTimestampUtc,
+                                    ReceivedAtUtc,
+                                    Active
+                                )
+                                VALUES
+                                (
+                                    @InstrumentId,
+                                    @LastPrice,
+                                    @BidPrice,
+                                    @AskPrice,
+                                    @OpenPrice,
+                                    @HighPrice,
+                                    @LowPrice,
+                                    @PreviousClose,
+                                    @Volume,
+                                    @LastProviderId,
+                                    @MarketTimestampUtc,
+                                    @ReceivedAtUtc,
+                                    1
+                                );
+                            END;
+                            ";
+
+            await _connection.ExecuteAsync(new CommandDefinition(sql, snapshot, cancellationToken: ct));
+        }
     }
 }
 

@@ -85,10 +85,8 @@ builder.Services.Configure<MarketDataOptions>(builder.Configuration.GetSection("
 builder.Services.AddScoped<IInstrumentService, InstrumentService>();
 builder.Services.AddScoped<ILocalAiContextService, LocalAiContextService>();
 builder.Services.AddScoped<IMarketCandleService, MarketCandleService>();
-builder.Services.AddSingleton<IMarketDataSource, MockMarketDataSource>();
 builder.Services.AddScoped<IMarketIngestionPipeline, MarketIngestionPipeline>();
 builder.Services.AddScoped<IMarketQuoteService, MarketQuoteService>();
-builder.Services.AddHostedService<MarketIngestionHostedService>();
 builder.Services.AddScoped<IMarketReferencePipeline, MarketReferencePipeline>();
 builder.Services.AddScoped<IMarketSnapshotProjector, MarketSnapshotProjector>();
 builder.Services.AddScoped<IMarketSnapshotService, MarketSnapshotService>();
@@ -127,46 +125,36 @@ builder.Services.AddScoped<IUserSessionsRepository, UserSessionRepository>();
 builder.Services.AddScoped<IPasswordHasher<Users>, Argon2PasswordHasher>();
 
 builder.Services.AddSingleton<TokenGenerator>();
+builder.Services.AddSingleton<IMarketDataSource, MockMarketDataSource>();
 
-var jwtSecret =
-    builder.Configuration["Jwt:Secret"]
-    ?? throw new InvalidOperationException(
-        "Jwt:Secret is missing.");
+builder.Services.AddHostedService<MarketIngestionHostedService>();
 
-var jwtIssuer =
-    builder.Configuration["Jwt:Issuer"];
-
-var jwtAudience =
-    builder.Configuration["Jwt:Audience"];
+var jwtSecret = builder.Configuration["Jwt:Secret"] ?? throw new InvalidOperationException("Jwt:Secret is missing.");
+var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+var jwtAudience = builder.Configuration["Jwt:Audience"];
 
 builder.Services
-    .AddAuthentication(
-        JwtBearerDefaults.AuthenticationScheme)
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters =
             new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
-                IssuerSigningKey =
-                    new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(jwtSecret)),
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
 
-                ValidateIssuer =
-                    !string.IsNullOrWhiteSpace(jwtIssuer),
+                ValidateIssuer = !string.IsNullOrWhiteSpace(jwtIssuer),
 
                 ValidIssuer = jwtIssuer,
 
-                ValidateAudience =
-                    !string.IsNullOrWhiteSpace(jwtAudience),
+                ValidateAudience = !string.IsNullOrWhiteSpace(jwtAudience),
 
                 ValidAudience = jwtAudience,
 
                 ValidateLifetime = true,
                 RequireExpirationTime = true,
 
-                ClockSkew =
-                    TimeSpan.FromMinutes(2)
+                ClockSkew = TimeSpan.FromMinutes(2)
             };
 
         options.Events =
@@ -174,17 +162,10 @@ builder.Services
             {
                 OnMessageReceived = context =>
                 {
-                    var path =
-                        context.HttpContext.Request.Path;
+                    var path = context.HttpContext.Request.Path;
+                    var queryToken = context.Request.Query["access_token"];
 
-                    var queryToken =
-                        context.Request.Query["access_token"];
-
-                    if (path.StartsWithSegments(
-                            "/hubs",
-                            StringComparison.OrdinalIgnoreCase)
-                        &&
-                        !string.IsNullOrWhiteSpace(queryToken))
+                    if (path.StartsWithSegments("/hubs", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(queryToken))
                     {
                         context.Token = queryToken;
                     }

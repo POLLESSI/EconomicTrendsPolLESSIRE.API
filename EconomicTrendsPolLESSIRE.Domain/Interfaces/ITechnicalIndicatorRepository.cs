@@ -10,6 +10,7 @@ namespace EconomicTrendsPolLESSIRE.Domain.Interfaces
         Task<TechnicalIndicator?> GetTechnicalIndicatorByIdAsync(long instrumentId, int intervalCode, int indicatorType, DateTime timestampUtc, CancellationToken ct = default);
         Task<bool> DeleteTechnicalIndicatorAsync(long instrumentId, int intervalCode, int indicatorType, DateTime timestampUtc, CancellationToken ct = default);
         Task<int> ArchivePastTechnicalIndicatorsAsync(CancellationToken ct = default);
+        Task UpsertAsync(TechnicalIndicator indicator, CancellationToken ct = default);
     }
 }
 

@@ -67,6 +67,41 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
             return _connection.QueryAsync<MarketCandle>(new CommandDefinition(sql, new { Limit = limit }, cancellationToken: ct));
         }
 
+        public Task<MarketCandle?> GetLatestByInstrumentAsync(long instrumentId, int intervalCode = 1, CancellationToken ct = default)
+        {
+            const string sql = @"
+                            SELECT TOP (1)
+                                [InstrumentId],
+                                [IntervalCode],
+                                [OpenTimeUtc],
+                                [OpenPrice],
+                                [HighPrice],
+                                [LowPrice],
+                                [ClosePrice],
+                                [Volume],
+                                [VWAP],
+                                [TradeCount],
+                                [IsFinal],
+                                [Active]
+                            FROM dbo.MarketCandle
+                            WHERE InstrumentId = @InstrumentId
+                              AND IntervalCode = @IntervalCode
+                              AND Active = 1
+                            ORDER BY OpenTimeUtc DESC;
+                            ";
+
+            return _connection
+                .QueryFirstOrDefaultAsync<MarketCandle>(
+                    new CommandDefinition(
+                        sql,
+                        new
+                        {
+                            InstrumentId = instrumentId,
+                            IntervalCode = intervalCode
+                        },
+                        cancellationToken: ct));
+        }
+
         public async Task<MarketCandle?> GetMarketCandleByIdAsync(long instrumentId, CancellationToken ct = default)
         {
             const string sql = @"
@@ -90,6 +125,82 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
                 _logger.LogError(ex, "Error getting Market Candels by Id={Id}", instrumentId);
                 return null;
             }
+        }
+
+        public Task<MarketCandle?> GetPreviousByInstrumentAsync(long instrumentId, int intervalCode = 1, CancellationToken ct = default)
+        {
+            const string sql = @"
+                            SELECT
+                                [InstrumentId],
+                                [IntervalCode],
+                                [OpenTimeUtc],
+                                [OpenPrice],
+                                [HighPrice],
+                                [LowPrice],
+                                [ClosePrice],
+                                [Volume],
+                                [VWAP],
+                                [TradeCount],
+                                [IsFinal],
+                                [Active]
+                            FROM dbo.MarketCandle
+                            WHERE InstrumentId = @InstrumentId
+                              AND IntervalCode = @IntervalCode
+                              AND Active = 1
+                            ORDER BY OpenTimeUtc DESC
+                            OFFSET 1 ROWS
+                            FETCH NEXT 1 ROWS ONLY;
+                            ";
+
+            return _connection.QueryFirstOrDefaultAsync<MarketCandle>(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        InstrumentId = instrumentId,
+                        IntervalCode = intervalCode
+                    },
+                    cancellationToken: ct));
+        }
+
+        public async Task<IReadOnlyList<MarketCandle>>GetRecentByInstrumentAsync(long instrumentId, int intervalCode, int limit, CancellationToken ct = default)
+        {
+            limit = Math.Clamp(limit, 1, 500);
+
+            const string sql = @"
+                            SELECT TOP (@Limit)
+                                [InstrumentId],
+                                [IntervalCode],
+                                [OpenTimeUtc],
+                                [OpenPrice],
+                                [HighPrice],
+                                [LowPrice],
+                                [ClosePrice],
+                                [Volume],
+                                [VWAP],
+                                [TradeCount],
+                                [IsFinal],
+                                [Active]
+                            FROM dbo.MarketCandle
+                            WHERE InstrumentId = @InstrumentId
+                              AND IntervalCode = @IntervalCode
+                              AND Active = 1
+                            ORDER BY OpenTimeUtc DESC;
+                            ";
+
+            var candles =
+                await _connection.QueryAsync<MarketCandle>(
+                    new CommandDefinition(
+                        sql,
+                        new
+                        {
+                            InstrumentId = instrumentId,
+                            IntervalCode = intervalCode,
+                            Limit = limit
+                        },
+                        cancellationToken: ct));
+
+            return candles.ToList();
         }
 
         public async Task<MarketCandle?> SaveMarketCandleAsync(MarketCandle marketCdl)

@@ -64,14 +64,33 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
 
         public Task<IEnumerable<MarketQuote>> GetAllMarketQuoteAsync(int limit = 200, CancellationToken ct = default)
         {
+            limit = Math.Clamp(limit, 1, 1000);
+
             const string sql = @"
-                            SELECT TOP(@Limit) [Id], [InstrumentId], [ProviderId], [TimestampUtc], [ReceivedAtUtc], [BidPrice], [BidSize], [AskPrice], [AskSize], [Active]
-                            FROM [MarketQuote]
+                            SELECT TOP (@Limit)
+                                [Id],
+                                [InstrumentId],
+                                [ProviderId],
+                                [TimestampUtc],
+                                [ReceivedAtUtc],
+                                [BidPrice],
+                                [BidSize],
+                                [AskPrice],
+                                [AskSize],
+                                [Active]
+                            FROM [dbo].[MarketQuote]
                             WHERE [Active] = 1
-                            ORDER BY [ReceivedAtUtc] ASC; "";
+                            ORDER BY [TimestampUtc] DESC;
                             ";
 
-            return _connection.QueryAsync<MarketQuote>(new CommandDefinition(sql, new { Limit = limit }, cancellationToken: ct));
+            return _connection.QueryAsync<MarketQuote>(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        Limit = limit
+                    },
+                    cancellationToken: ct));
         }
 
         public async Task<MarketQuote?> GetMarketQuoteByIdAsync(long id, CancellationToken ct = default)
@@ -169,6 +188,36 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
                             ";
 
             await _connection.ExecuteAsync(new CommandDefinition(sql, quotes, cancellationToken: ct));
+        }
+
+        public Task<MarketQuote?> GetLatestByInstrumentAsync(long instrumentId, CancellationToken ct = default)
+        {
+            const string sql = @"
+                            SELECT TOP (1)
+                                [Id],
+                                [InstrumentId],
+                                [ProviderId],
+                                [TimestampUtc],
+                                [ReceivedAtUtc],
+                                [BidPrice],
+                                [BidSize],
+                                [AskPrice],
+                                [AskSize],
+                                [Active]
+                            FROM dbo.MarketQuote
+                            WHERE InstrumentId = @InstrumentId
+                              AND Active = 1
+                            ORDER BY TimestampUtc DESC, Id DESC;
+                            ";
+
+            return _connection.QueryFirstOrDefaultAsync<MarketQuote>(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        InstrumentId = instrumentId
+                    },
+                    cancellationToken: ct));
         }
     }
 }

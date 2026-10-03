@@ -1,5 +1,4 @@
 ﻿using EconomicTrendsPolLESSIRE.Domain.Entities;
-using System.Diagnostics.Metrics;
 
 namespace EconomicTrendsPolLESSIRE.Domain.Interfaces
 {
@@ -11,6 +10,7 @@ namespace EconomicTrendsPolLESSIRE.Domain.Interfaces
         Task<bool> DeleteMarketTradeAsync(long id);
         Task<int> ArchivePastMarketTradesAsync(CancellationToken ct = default);
         Task InsertBatchAsync(IReadOnlyCollection<MarketTrade> trades, CancellationToken ct = default);
+        Task<MarketTrade?> GetLatestByInstrumentAsync(long instrumentId, CancellationToken ct = default);
     }
 }
 

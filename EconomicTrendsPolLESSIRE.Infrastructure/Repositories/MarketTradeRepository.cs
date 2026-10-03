@@ -85,6 +85,35 @@ namespace EconomicTrendsPolLESSIRE.Infrastructure.Repositories
             }
         }
 
+        public Task<MarketTrade?> GetLatestByInstrumentAsync(long instrumentId, CancellationToken ct = default)
+        {
+            const string sql = @"
+                            SELECT TOP (1)
+                                [Id],
+                                [InstrumentId],
+                                [ProviderId],
+                                [TimestampUtc],
+                                [ReceivedAtUtc],
+                                [Price],
+                                [Quantity],
+                                [SequenceNumber],
+                                [Active]
+                            FROM dbo.MarketTrade
+                            WHERE InstrumentId = @InstrumentId
+                              AND Active = 1
+                            ORDER BY TimestampUtc DESC, Id DESC;
+                            ";
+
+            return _connection.QueryFirstOrDefaultAsync<MarketTrade>(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        InstrumentId = instrumentId
+                    },
+                    cancellationToken: ct));
+        }
+
         public async Task<MarketTrade?> GetMarketTradeByIdAsync(long id, CancellationToken ct = default)
         {
             const string sql = @"

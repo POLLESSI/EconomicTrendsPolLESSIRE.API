@@ -10,6 +10,7 @@ namespace EconomicTrendsPolLESSIRE.Domain.Interfaces
         Task<MarketSnapshot?> GetMarketSnapshotByIdAsync(long instrumentId, CancellationToken ct = default);
         Task<bool> DeleteMarketSnapshotAsync(long instrumentId);
         Task<int> ArchivePastMarketSnapshotsAsync(CancellationToken ct = default);
+        Task UpsertAsync(MarketSnapshot snapshot, CancellationToken ct = default);
     }
 }
 

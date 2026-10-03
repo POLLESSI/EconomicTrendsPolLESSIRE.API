@@ -1,4 +1,6 @@
-﻿using EconomicTrendsPolLESSIRE.Contracts.DTOs;
+﻿using Dapper;
+using EconomicTrendsPolLESSIRE.Application.Extensions;
+using EconomicTrendsPolLESSIRE.Contracts.DTOs;
 using EconomicTrendsPolLESSIRE.Contracts.Hubs;
 using EconomicTrendsPolLESSIRE.Domain.Entities;
 using EconomicTrendsPolLESSIRE.Domain.Interfaces;
@@ -30,10 +32,13 @@ namespace EconomicTrendsPolLESSIRE.API.Controllers
         }
 
         [HttpGet("all")]
-        public async Task<ActionResult<IEnumerable<MarketQuoteDTO>>> GetAllAsync(int limit = 500, CancellationToken ct = default)
+        public async Task<ActionResult<IEnumerable<MarketQuoteDTO>>> GetAllAsync( int limit = 500, CancellationToken ct = default)
         {
-            var marketQuotes = await _marketQuoteRepository.GetAllMarketQuoteAsync(limit, ct);
-            var result = marketQuotes.Select(x => x.MapToMarketQuoteDTO()).ToList();
+            limit = Math.Clamp(limit, 1, 1000);
+
+            var quotes = await _marketQuoteRepository.GetAllMarketQuoteAsync( limit, ct);
+
+            var result = quotes.Select(x => x.MapToMarketQuoteDTO()).ToList();
 
             return Ok(result);
         }
