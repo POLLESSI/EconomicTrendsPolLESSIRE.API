@@ -4,25 +4,47 @@ using MongoDB.Driver;
 
 namespace EconomicTrendsPolLESSIRE.Infrastructure.NoSql.Mongo.Repositories
 {
-    public sealed class MistralInteractionNoSqlRepository
+    public sealed class MistralInteractionNoSqlRepository : IMistralInteractionNoSqlRepository
     {
         private readonly IMongoCollection<MistralInteractionDocument> _collection;
 
-        public MistralInteractionNoSqlRepository(IMongoDbContext context)
+        public MistralInteractionNoSqlRepository(IMongoDatabase database)
         {
-            _collection = context.Collection<MistralInteractionDocument>("mistral_interactions");
+            _collection = database.GetCollection<MistralInteractionDocument>("MistralInteractions");
         }
 
-        public Task InsertAsync(MistralInteractionDocument document, CancellationToken ct = default)
-            => _collection.InsertOneAsync(document, cancellationToken: ct);
-
-        public async Task<IReadOnlyList<MistralInteractionDocument>> GetLatestAsync(int limit, CancellationToken ct = default)
+        public async Task InsertAsync(
+            MistralInteractionDocument document,
+            CancellationToken ct = default)
         {
-            return await _collection
-                .Find(_ => true)
-                .SortByDescending(x => x.CreatedAtUtc)
-                .Limit(limit)
-                .ToListAsync(ct);
+            ArgumentNullException.ThrowIfNull(document);
+
+            await _collection.InsertOneAsync(
+                document,
+                cancellationToken: ct);
+        }
+
+        public async Task<IReadOnlyList<MistralInteractionDocument>>
+            GetLatestAsync(
+                int limit,
+                CancellationToken ct = default)
+        {
+            limit = Math.Clamp(limit, 1, 500);
+
+            var documents =
+                await _collection
+                    .Find(
+                        Builders<MistralInteractionDocument>
+                            .Filter
+                            .Empty)
+                    .Sort(
+                        Builders<MistralInteractionDocument>
+                            .Sort
+                            .Descending("_id"))
+                    .Limit(limit)
+                    .ToListAsync(ct);
+
+            return documents;
         }
     }
 }

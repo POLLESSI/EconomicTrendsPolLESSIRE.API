@@ -1,5 +1,6 @@
-using EconomicTrendsPolLESSIRE.API.Tools;
+using EconomicTrendsPolLESSIRE.API.BackgroundServices;
 using EconomicTrendsPolLESSIRE.API.Options;
+using EconomicTrendsPolLESSIRE.API.Tools;
 using EconomicTrendsPolLESSIRE.Application.Interfaces;
 using EconomicTrendsPolLESSIRE.Application.MarketData;
 using EconomicTrendsPolLESSIRE.Contracts.Hubs;
@@ -8,6 +9,8 @@ using EconomicTrendsPolLESSIRE.Domain.Interfaces;
 using EconomicTrendsPolLESSIRE.Hubs;
 using EconomicTrendsPolLESSIRE.Hubs.Hubs;
 using EconomicTrendsPolLESSIRE.Infrastructure.MarketData;
+using EconomicTrendsPolLESSIRE.Infrastructure.NoSql.Mongo.Abstractions;
+using EconomicTrendsPolLESSIRE.Infrastructure.NoSql.Mongo.Repositories;
 using EconomicTrendsPolLESSIRE.Infrastructure.Repositories;
 using EconomicTrendsPolLESSIRE.Infrastructure.Security;
 using EconomicTrendsPolLESSIRE.Infrastructure.Services;
@@ -21,6 +24,7 @@ using Microsoft.OpenApi.Models;
 using System.Data;
 using System.Text;
 using System.Text.Json.Serialization;
+using MongoDB.Driver;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -77,6 +81,18 @@ var connectionString = builder.Configuration.GetConnectionString("Default") ?? t
 builder.Services.AddScoped<IDbConnection>(_ => new SqlConnection(connectionString));
 
 // Realtime publisher
+
+var mongoConnectionString = builder.Configuration["Mongo:ConnectionString"] ?? throw new InvalidOperationException("Mongo:ConnectionString is missing.");
+
+var mongoDatabaseName = builder.Configuration["Mongo:DatabaseName"] ?? throw new InvalidOperationException("Mongo:DatabaseName is missing.");
+
+builder.Services.AddSingleton<IMongoClient>( _ => new MongoClient(mongoConnectionString));
+
+builder.Services.AddSingleton<IMongoDatabase>(
+    sp =>
+        sp.GetRequiredService<IMongoClient>()
+          .GetDatabase(mongoDatabaseName));
+
 builder.Services.AddSingleton<IMarketRealtimePublisher, SignalRMarketRealtimePublisher>();
 
 builder.Services.Configure<MarketDataOptions>(builder.Configuration.GetSection("MarketData"));
@@ -112,6 +128,15 @@ builder.Services.AddScoped<IMarketCandleRepository, MarketCandleRepository>();
 builder.Services.AddScoped<IMarketQuoteRepository, MarketQuoteRepository>();
 builder.Services.AddScoped<IMarketSnapshotRepository, MarketSnapshotRepository>();
 builder.Services.AddScoped<IMarketTradeRepository, MarketTradeRepository>();
+builder.Services.AddSingleton<IMistralRequestRegistry, MistralRequestRegistry>();
+builder.Services.AddSingleton<IMistralBackgroundQueue, MistralBackgroundQueue>();
+
+builder.Services.AddScoped<EconomicTrendsDomainGuard>();
+builder.Services.AddScoped<MistralOrchestrator>();
+builder.Services.AddScoped<IMistralOrchestrator>(sp => sp.GetRequiredService<MistralOrchestrator>());
+builder.Services.AddScoped<IMistralQueuedRequestProcessor>(sp => sp.GetRequiredService<MistralOrchestrator>());
+builder.Services.AddScoped<IMistralInteractionRepository, MistralInteractionsRepository>();
+builder.Services.AddScoped<IMistralInteractionNoSqlRepository, MistralInteractionNoSqlRepository>();
 builder.Services.AddScoped<IProviderInstrumentRepository, ProviderInstrumentRepository>();
 builder.Services.AddScoped<IProviderRepository, ProviderRepository>();
 builder.Services.AddScoped<IProfanityRepository, ProfanityRepository>();
@@ -127,7 +152,19 @@ builder.Services.AddScoped<IPasswordHasher<Users>, Argon2PasswordHasher>();
 builder.Services.AddSingleton<TokenGenerator>();
 builder.Services.AddSingleton<IMarketDataSource, MockMarketDataSource>();
 
+builder.Services.AddHostedService<MistralBackgroundWorker>();
 builder.Services.AddHostedService<MarketIngestionHostedService>();
+
+builder.Services.AddHttpClient<IGenerativeAiService, OllamaGenerativeAiService>(
+(sp, client) =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    var baseUrl = config["MistralAI:ApiUrl"] ?? "http://127.0.0.1:11434/";
+
+    client.BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/");
+
+    client.Timeout = TimeSpan.FromSeconds(config.GetValue<int?>("MistralAI:TimeoutSeconds") ?? 180);
+});
 
 var jwtSecret = builder.Configuration["Jwt:Secret"] ?? throw new InvalidOperationException("Jwt:Secret is missing.");
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
@@ -178,17 +215,22 @@ builder.Services
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy(
+       "User",
+       policy =>
+       {
+           policy.RequireAuthenticatedUser();
+
+           policy.RequireRole(Roles.User, Roles.Moderator, Roles.Admin);
+       });
+    options.AddPolicy(
         "Admin",
         policy =>
-            policy.RequireRole(
-                Roles.Admin));
+            policy.RequireRole(Roles.Admin));
 
     options.AddPolicy(
         "AdminOrModo",
         policy =>
-            policy.RequireRole(
-                Roles.Admin,
-                Roles.Moderator));
+            policy.RequireRole(Roles.Admin, Roles.Moderator));
 });
 
 var app = builder.Build();

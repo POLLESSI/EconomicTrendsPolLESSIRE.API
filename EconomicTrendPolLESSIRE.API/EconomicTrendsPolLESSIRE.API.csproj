@@ -31,7 +31,6 @@
 	</ItemGroup>
 
   <ItemGroup>
-    <Folder Include="BackgroundService\" />
     <Folder Include="BackgroundWorkers\" />
     <Folder Include="Extensions\" />
     <Folder Include="Hubs\Serilog\Sinks\" />

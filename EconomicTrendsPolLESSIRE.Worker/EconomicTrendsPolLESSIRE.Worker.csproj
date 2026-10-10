@@ -9,10 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Mistral\" />
-  </ItemGroup>
-
-  <ItemGroup>
 	<ProjectReference Include="..\EconomicTrendsPolLESSIRE.Application\EconomicTrendsPolLESSIRE.Application.csproj" />
   </ItemGroup>
 
